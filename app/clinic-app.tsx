@@ -24,6 +24,7 @@ import {
   Sparkles,
   Trash2,
   Upload,
+  UserCog,
   Users,
   X,
 } from 'lucide-react';
@@ -85,6 +86,7 @@ type AnamnesisRecord = {
   crp: string;
   updatedAt: string;
 };
+type UserRole = 'administrador' | 'psicologo' | 'administrativo';
 const initialPatients: Patient[] = [
   {
     id: 1,
@@ -224,6 +226,8 @@ export default function ClinicApp() {
   const [authReady, setAuthReady] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [cloudReady, setCloudReady] = useState(false);
+  const [role, setRole] = useState<UserRole | null>(null);
+  const [profileName, setProfileName] = useState('Profissional');
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
     [tab, setTab] = useState('Resumo');
@@ -268,7 +272,34 @@ export default function ClinicApp() {
 
   useEffect(() => {
     if (!supabase || !userId) return;
+    supabase
+      .from('profiles')
+      .select('role, full_name')
+      .eq('user_id', userId)
+      .single()
+      .then(({ data }) => {
+        setRole((data?.role as UserRole) ?? 'psicologo');
+        setProfileName(data?.full_name || 'Profissional');
+      });
+  }, [userId]);
+
+  useEffect(() => {
+    if (!supabase || !userId || !role) return;
     setCloudReady(false);
+    if (role === 'administrativo') {
+      supabase
+        .from('client_registry')
+        .select('data')
+        .then(({ data }) => {
+          setPatients((data ?? []).map((row) => row.data as Patient));
+          setAssessments([]);
+          setSessions([]);
+          setAnamneses({});
+          setActive('Pacientes');
+          setCloudReady(true);
+        });
+      return;
+    }
     supabase
       .from('user_state')
       .select('data')
@@ -289,10 +320,10 @@ export default function ClinicApp() {
         }
         setCloudReady(true);
       });
-  }, [userId]);
+  }, [userId, role]);
 
   useEffect(() => {
-    if (!supabase || !userId || !cloudReady) return;
+    if (!supabase || !userId || !cloudReady || role === 'administrativo') return;
     const cloud = supabase;
     const timer = window.setTimeout(() => {
       cloud.from('user_state').upsert({
@@ -300,9 +331,16 @@ export default function ClinicApp() {
         data: { patients, assessments, sessions, anamneses },
         updated_at: new Date().toISOString(),
       });
+      const registryRows = patients.map((patient) => ({
+        professional_id: userId,
+        patient_id: patient.id,
+        data: patient,
+        updated_at: new Date().toISOString(),
+      }));
+      if (registryRows.length) cloud.from('client_registry').upsert(registryRows);
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [userId, cloudReady, patients, assessments, sessions, anamneses]);
+  }, [userId, role, cloudReady, patients, assessments, sessions, anamneses]);
   const filtered = patients.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase()),
   );
@@ -472,6 +510,12 @@ export default function ClinicApp() {
     close();
     setTab('Avaliações');
   }
+  const visibleNav =
+    role === 'administrativo'
+      ? ([['Pacientes', Users]] as const)
+      : role === 'administrador'
+        ? ([...nav, ['Usuários', UserCog]] as const)
+        : nav;
   if (!authReady)
     return (
       <div className="grid min-h-screen place-items-center bg-[#eef5f2] text-sm text-teal-800">
@@ -479,6 +523,12 @@ export default function ClinicApp() {
       </div>
     );
   if (!authenticated) return <LoginScreen onLogin={login} />;
+  if (!role)
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#eef5f2] text-sm text-teal-800">
+        Carregando permissões…
+      </div>
+    );
   return (
     <div className="min-h-screen bg-[#f4f7f6] text-slate-800">
       <aside
@@ -505,7 +555,7 @@ export default function ClinicApp() {
           <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-teal-100/45">
             Consultório
           </p>
-          {nav.map(([label, Icon]) => (
+          {visibleNav.map(([label, Icon]) => (
             <button
               key={label}
               onClick={() => {
@@ -535,9 +585,13 @@ export default function ClinicApp() {
               MT
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold">Marco Tulio</p>
+              <p className="text-sm font-semibold">{profileName}</p>
               <p className="truncate text-xs text-teal-100/55">
-                marcotsousa@gmail.com
+                {role === 'administrador'
+                  ? 'Administrador'
+                  : role === 'psicologo'
+                    ? 'Psicólogo'
+                    : 'Administrativo'}
               </p>
             </div>
             <button
@@ -597,16 +651,20 @@ export default function ClinicApp() {
             <Bell size={18} />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
-          <button
-            onClick={() => setModal('patient')}
-            className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
-          >
-            <Plus size={17} />
-            Novo paciente
-          </button>
+          {role !== 'administrativo' && (
+            <button
+              onClick={() => setModal('patient')}
+              className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
+            >
+              <Plus size={17} />
+              Novo paciente
+            </button>
+          )}
         </header>
         <div className="p-5 md:p-8">
-          {selected ? (
+          {selected && role === 'administrativo' ? (
+            <ClientRegistryView p={selected} back={() => setSelected(null)} />
+          ) : selected ? (
             <PatientView
               p={selected}
               tab={tab}
@@ -626,13 +684,16 @@ export default function ClinicApp() {
               back={() => setSelected(null)}
               open={setModal}
             />
+          ) : active === 'Usuários' && role === 'administrador' ? (
+            <UserManagement />
           ) : active === 'Pacientes' ? (
             <Patients
               patients={filtered}
               query={query}
               setQuery={setQuery}
               select={setSelected}
-              open={() => setModal('patient')}
+              open={() => role !== 'administrativo' && setModal('patient')}
+              canCreate={role !== 'administrativo'}
             />
           ) : (
             <Dashboard
@@ -646,7 +707,7 @@ export default function ClinicApp() {
           )}
         </div>
       </main>
-      {modal && (
+      {modal && role !== 'administrativo' && (
         <Modal
           title={
             modal === 'patient'
@@ -839,12 +900,14 @@ function Patients({
   setQuery,
   select,
   open,
+  canCreate,
 }: {
   patients: Patient[];
   query: string;
   setQuery: (s: string) => void;
   select: (p: Patient) => void;
   open: () => void;
+  canCreate: boolean;
 }) {
   return (
     <div className="mx-auto max-w-7xl">
@@ -855,13 +918,15 @@ function Patients({
             Cadastros e prontuários sob sua responsabilidade.
           </p>
         </div>
-        <button
-          onClick={open}
-          className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"
-        >
-          <Plus size={17} />
-          Novo paciente
-        </button>
+        {canCreate && (
+          <button
+            onClick={open}
+            className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            <Plus size={17} />
+            Novo paciente
+          </button>
+        )}
       </div>
       <section className="panel">
         <div className="p-5">
@@ -891,6 +956,121 @@ function Patients({
           ))}
         </div>
       </section>
+    </div>
+  );
+}
+function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
+  return (
+    <div className="mx-auto max-w-4xl">
+      <button onClick={back} className="mb-4 text-sm font-medium text-slate-500">
+        ← Voltar para clientes
+      </button>
+      <section className="panel p-6">
+        <div className="mb-6 flex items-center gap-4">
+          <PatientName p={p} />
+          <span className="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
+            Somente consulta
+          </span>
+        </div>
+        <div className="grid gap-5 border-t pt-6 sm:grid-cols-2">
+          {[
+            ['Data de nascimento', p.birth],
+            ['Documento', p.document],
+            ['Telefone', p.phone],
+            ['E-mail', p.email],
+            ['Status', p.status],
+            ['Último atendimento', p.last],
+          ].map(([label, value]) => (
+            <div key={label}>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+              <p className="mt-1 text-sm text-slate-700">{value || 'Não informado'}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function UserManagement() {
+  const [users, setUsers] = useState<Array<{ id: string; email: string; fullName: string; role: UserRole }>>([]);
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(true);
+  async function request(path: string, options?: RequestInit) {
+    const { data } = await supabase!.auth.getSession();
+    return fetch(path, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${data.session?.access_token}`,
+        ...options?.headers,
+      },
+    });
+  }
+  async function load() {
+    setLoading(true);
+    const response = await request('/api/admin/users');
+    if (response.ok) setUsers(await response.json());
+    else setMessage('Não foi possível carregar os usuários.');
+    setLoading(false);
+  }
+  useEffect(() => {
+    load();
+  }, []);
+  async function create(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const values = Object.fromEntries(new FormData(form));
+    setMessage('Criando usuário…');
+    const response = await request('/api/admin/users', {
+      method: 'POST',
+      body: JSON.stringify(values),
+    });
+    const result = await response.json();
+    if (!response.ok) return setMessage(result.error || 'Falha ao criar usuário.');
+    form.reset();
+    setMessage('Usuário criado com sucesso.');
+    await load();
+  }
+  const roleLabel = { administrador: 'Administrador', psicologo: 'Psicólogo', administrativo: 'Administrativo' };
+  return (
+    <div className="mx-auto max-w-7xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Usuários e perfis</h1>
+        <p className="mt-1 text-sm text-slate-500">Cadastre profissionais e defina o nível de acesso.</p>
+      </div>
+      <div className="grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
+        <form onSubmit={create} className="panel space-y-4 p-6">
+          <h2 className="text-lg font-bold">Novo usuário</h2>
+          <Field label="Nome completo" name="fullName" />
+          <Field label="E-mail" name="email" type="email" />
+          <Field label="Senha provisória" name="password" type="password" />
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Perfil
+            <select name="role" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="psicologo">
+              <option value="administrador">Administrador — acesso total</option>
+              <option value="psicologo">Psicólogo — prontuários e instrumentos</option>
+              <option value="administrativo">Administrativo — consulta de clientes</option>
+            </select>
+          </label>
+          <button className="h-11 w-full rounded-xl bg-[#176a68] font-semibold text-white">Criar usuário</button>
+          {message && <p className="text-sm text-slate-500">{message}</p>}
+        </form>
+        <section className="panel overflow-hidden">
+          <div className="panel-head"><div><h2>Usuários cadastrados</h2><p>{users.length} conta(s)</p></div></div>
+          {loading ? <p className="p-6 text-sm text-slate-400">Carregando…</p> : (
+            <div className="divide-y divide-slate-100">
+              {users.map((user) => (
+                <div key={user.id} className="flex items-center gap-4 p-5">
+                  <div className="grid h-10 w-10 place-items-center rounded-full bg-teal-50 font-bold text-teal-700">{(user.fullName || user.email)[0].toUpperCase()}</div>
+                  <div className="min-w-0 flex-1"><p className="truncate font-semibold">{user.fullName || 'Sem nome'}</p><p className="truncate text-xs text-slate-500">{user.email}</p></div>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{roleLabel[user.role]}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
