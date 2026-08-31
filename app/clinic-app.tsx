@@ -19,7 +19,6 @@ import {
   Menu,
   Plus,
   Search,
-  Settings,
   ShieldCheck,
   Sparkles,
   Trash2,
@@ -576,11 +575,7 @@ export default function ClinicApp() {
           ))}
         </nav>
         <div className="border-t border-white/10 p-4">
-          <button className="flex items-center gap-3 px-3 py-2 text-sm text-teal-50/70">
-            <Settings size={18} />
-            Configurações
-          </button>
-          <div className="mt-3 flex items-center gap-3 rounded-xl bg-black/10 p-3">
+          <div className="flex items-center gap-3 rounded-xl bg-black/10 p-3">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-[#e1b893] text-sm font-bold text-[#6b4126]">
               MT
             </div>
