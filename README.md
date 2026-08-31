@@ -2,6 +2,8 @@
 
 Aplicação responsiva para prontuários psicológicos, anamnese, evolução de sessões e rastreios clínicos. O acesso é protegido pela autenticação da plataforma e todas as consultas devem usar o identificador do profissional autenticado como filtro de propriedade.
 
+Na versão local, pacientes, sessões e avaliações são preservados no armazenamento privado do navegador. A interface também permite exportar e importar um backup JSON. Esses dados pertencem somente ao perfil de navegador e ao computador em uso.
+
 ## Recursos
 
 - Dashboard clínico, busca e cadastro de pacientes.
@@ -28,6 +30,12 @@ Acesse `http://localhost:3000`. O ambiente local fornece um usuário de teste. P
 ```bash
 npm run build
 ```
+
+No Windows, também é possível iniciar com dois cliques em `iniciar-local.bat`. Mantenha a janela aberta enquanto estiver usando o sistema.
+
+### Backup local
+
+Use o botão com seta para baixo no cabeçalho para baixar o backup. O botão com seta para cima restaura um arquivo anteriormente exportado. Faça backups periódicos e mantenha-os em local protegido.
 
 ## Estrutura principal
 

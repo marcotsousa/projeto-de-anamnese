@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Activity,
   Bell,
@@ -8,6 +8,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   FileText,
+  Download,
   HeartPulse,
   LayoutDashboard,
   LogOut,
@@ -17,6 +18,7 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  Upload,
   Users,
   X,
 } from 'lucide-react';
@@ -164,22 +166,102 @@ const nav = [
   ['Relatórios', FileText],
 ] as const;
 
+function usePersistentState<T>(key: string, initialValue: T) {
+  const [value, setValue] = useState(initialValue);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem(key);
+      if (stored) setValue(JSON.parse(stored) as T);
+    } catch {
+      // Mantém os dados iniciais quando um backup local estiver corrompido.
+    } finally {
+      setHydrated(true);
+    }
+  }, [key]);
+
+  useEffect(() => {
+    if (hydrated) window.localStorage.setItem(key, JSON.stringify(value));
+  }, [hydrated, key, value]);
+
+  return [value, setValue] as const;
+}
+
 export default function ClinicApp() {
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
     [tab, setTab] = useState('Resumo');
-  const [patients, setPatients] = useState(initialPatients),
-    [assessments, setAssessments] = useState(initialAssessments),
-    [sessions, setSessions] = useState(initialSessions);
+  const [patients, setPatients] = usePersistentState(
+      'projeto-anamnese:patients',
+      initialPatients,
+    ),
+    [assessments, setAssessments] = usePersistentState(
+      'projeto-anamnese:assessments',
+      initialAssessments,
+    ),
+    [sessions, setSessions] = usePersistentState(
+      'projeto-anamnese:sessions',
+      initialSessions,
+    );
   const [query, setQuery] = useState(''),
     [modal, setModal] = useState<'patient' | 'session' | 'assessment' | null>(
       null,
     ),
     [mobile, setMobile] = useState(false);
+  const importRef = useRef<HTMLInputElement>(null);
   const filtered = patients.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase()),
   );
   const close = () => setModal(null);
+  function exportBackup() {
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            version: 1,
+            exportedAt: new Date().toISOString(),
+            patients,
+            assessments,
+            sessions,
+          },
+          null,
+          2,
+        ),
+      ],
+      { type: 'application/json' },
+    );
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `projeto-anamnese-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  }
+  function importBackup(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result));
+        if (
+          !Array.isArray(data.patients) ||
+          !Array.isArray(data.assessments) ||
+          !Array.isArray(data.sessions)
+        )
+          throw new Error();
+        setPatients(data.patients);
+        setAssessments(data.assessments);
+        setSessions(data.sessions);
+        setSelected(null);
+        window.alert('Backup importado com sucesso.');
+      } catch {
+        window.alert('Arquivo de backup inválido.');
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }
   function addPatient(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget),
@@ -274,10 +356,10 @@ export default function ClinicApp() {
             <Brain size={23} />
           </div>
           <div>
-              <div className="text-sm font-bold leading-tight">
-                Projeto de Anamnese
-              </div>
-            <div className="text-[11px] text-teal-100/70">Gestão clínica</div>
+            <div className="text-sm font-bold leading-tight">
+              Projeto de Anamnese
+            </div>
+            <div className="text-[11px] text-teal-100/70">Versão local</div>
           </div>
           <button
             className="ml-auto md:hidden"
@@ -342,6 +424,32 @@ export default function ClinicApp() {
               onChange={(e) => setQuery(e.target.value)}
               className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-teal-500"
               placeholder="Buscar pacientes, avaliações..."
+            />
+          </div>
+          <div className="hidden items-center gap-2 lg:flex">
+            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+              ● Salvo neste computador
+            </span>
+            <button
+              onClick={exportBackup}
+              title="Exportar backup"
+              className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-teal-700"
+            >
+              <Download size={17} />
+            </button>
+            <button
+              onClick={() => importRef.current?.click()}
+              title="Importar backup"
+              className="grid h-10 w-10 place-items-center rounded-xl border border-slate-200 bg-white text-slate-600 hover:text-teal-700"
+            >
+              <Upload size={17} />
+            </button>
+            <input
+              ref={importRef}
+              onChange={importBackup}
+              type="file"
+              accept="application/json"
+              className="hidden"
             />
           </div>
           <button className="relative grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
