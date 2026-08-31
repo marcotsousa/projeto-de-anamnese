@@ -1072,7 +1072,7 @@ function UserManagement() {
           <Field label="Nome completo" name="fullName" />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Cargo" name="jobTitle" />
-            <Field label="Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
+            <Field label="Número do Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
           </div>
           <Field label="Endereço comercial" name="businessAddress" />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1101,7 +1101,7 @@ function UserManagement() {
                   <div className="grid h-10 w-10 place-items-center rounded-full bg-teal-50 font-bold text-teal-700">{(user.fullName || user.email)[0].toUpperCase()}</div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{user.fullName || 'Sem nome'}</p>
-                    <p className="truncate text-xs text-slate-500">{user.jobTitle || roleLabel[user.role]} · {user.council || 'Sem conselho'}</p>
+                    <p className="truncate text-xs text-slate-500">{user.jobTitle || roleLabel[user.role]} · {user.council || 'Número do conselho não informado'}</p>
                     <p className="truncate text-xs text-slate-400">{user.email} · {user.whatsapp || 'Sem WhatsApp'}</p>
                   </div>
                   <label className="grid min-w-48 gap-1 text-xs font-semibold text-slate-500">
@@ -1410,7 +1410,7 @@ function LoginScreen({
             <Field label="Nome completo" name="fullName" />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Cargo" name="jobTitle" />
-              <Field label="Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
+              <Field label="Número do Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
             </div>
             <Field label="Endereço comercial" name="businessAddress" />
             <div className="grid gap-4 sm:grid-cols-2">
