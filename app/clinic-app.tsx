@@ -21,6 +21,7 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
+  Trash2,
   Upload,
   Users,
   X,
@@ -344,6 +345,26 @@ export default function ClinicApp() {
     setSelected(null);
     setAuthenticated(false);
   }
+  function deletePatient(patient: Patient) {
+    const confirmed = window.confirm(
+      `Apagar permanentemente o registro de ${patient.name}?\n\nA anamnese, as sessões e as avaliações vinculadas também serão excluídas. Esta ação não pode ser desfeita.`,
+    );
+    if (!confirmed) return;
+    setPatients((current) => current.filter((item) => item.id !== patient.id));
+    setSessions((current) =>
+      current.filter((item) => item.patientId !== patient.id),
+    );
+    setAssessments((current) =>
+      current.filter((item) => item.patientId !== patient.id),
+    );
+    setAnamneses((current) => {
+      const next = { ...current };
+      delete next[String(patient.id)];
+      return next;
+    });
+    setSelected(null);
+    setActive('Pacientes');
+  }
   function addSession(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selected) return;
@@ -551,6 +572,7 @@ export default function ClinicApp() {
                   [String(selected.id)]: record,
                 }))
               }
+              onDelete={() => deletePatient(selected)}
               back={() => setSelected(null)}
               open={setModal}
             />
@@ -840,6 +862,7 @@ function PatientView({
   sessions,
   anamnesis,
   saveAnamnesis,
+  onDelete,
   back,
   open,
 }: {
@@ -850,6 +873,7 @@ function PatientView({
   sessions: Session[];
   anamnesis?: AnamnesisRecord;
   saveAnamnesis: (record: AnamnesisRecord) => void;
+  onDelete: () => void;
   back: () => void;
   open: (m: 'session' | 'assessment') => void;
 }) {
@@ -877,13 +901,22 @@ function PatientView({
                 {p.age} anos · {p.birth} · {p.document}
               </p>
             </div>
-            <button
-              onClick={() => open('session')}
-              className="mb-1 flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"
-            >
-              <Plus size={17} />
-              Nova atualização
-            </button>
+            <div className="mb-1 flex flex-wrap gap-2">
+              <button
+                onClick={onDelete}
+                className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-50"
+              >
+                <Trash2 size={17} />
+                Apagar cliente
+              </button>
+              <button
+                onClick={() => open('session')}
+                className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"
+              >
+                <Plus size={17} />
+                Nova atualização
+              </button>
+            </div>
           </div>
           <div className="mt-6 flex gap-1 overflow-x-auto">
             {tabs.map((t) => (
