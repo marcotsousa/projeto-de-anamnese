@@ -8,12 +8,17 @@ export async function POST(request: NextRequest) {
   if (!url || !serviceKey)
     return NextResponse.json({ error: 'Cadastro indisponível no momento.' }, { status: 503 });
 
-  const { fullName, email, password, jobTitle, council, businessAddress, municipality, whatsapp } = await request.json();
+  const { fullName, email, password, jobTitle, council, businessAddress, state, municipality, whatsapp } = await request.json();
   if (!fullName?.trim() || !email?.trim() || !password)
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 });
   if (!council?.trim())
     return NextResponse.json(
       { error: 'Informe o número do CRP para prosseguir com o cadastro.' },
+      { status: 400 },
+    );
+  if (!state?.trim() || !municipality?.trim())
+    return NextResponse.json(
+      { error: 'Selecione o Estado (UF) e o Município.' },
       { status: 400 },
     );
   if (password.length < 8)
@@ -43,6 +48,7 @@ export async function POST(request: NextRequest) {
     job_title: jobTitle?.trim() || 'Psicólogo(a)',
     council: council?.trim() || '',
     business_address: businessAddress?.trim() || '',
+    state: state.trim(),
     municipality: municipality?.trim() || '',
     whatsapp: whatsapp?.trim() || '',
   });

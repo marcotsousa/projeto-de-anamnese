@@ -1321,6 +1321,29 @@ function LoginScreen({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
+  const [selectedState, setSelectedState] = useState('');
+  const [municipalities, setMunicipalities] = useState<string[]>([]);
+  const [loadingMunicipalities, setLoadingMunicipalities] = useState(false);
+  useEffect(() => {
+    if (!selectedState) {
+      setMunicipalities([]);
+      return;
+    }
+    let active = true;
+    setLoadingMunicipalities(true);
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${selectedState}/municipios?orderBy=nome`)
+      .then((response) => response.json())
+      .then((items: Array<{ nome: string }>) => {
+        if (active) setMunicipalities(items.map((item) => item.nome));
+      })
+      .catch(() => {
+        if (active) setMunicipalities([]);
+      })
+      .finally(() => {
+        if (active) setLoadingMunicipalities(false);
+      });
+    return () => { active = false; };
+  }, [selectedState]);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -1411,9 +1434,22 @@ function LoginScreen({
             <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" />
             <Field label="Endereço comercial" name="businessAddress" />
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Município" name="municipality" />
-              <Field label="WhatsApp" name="whatsapp" type="tel" />
+              <label className="grid gap-1.5 text-sm font-semibold">
+                Estado (UF)
+                <select required name="state" value={selectedState} onChange={(event) => setSelectedState(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+                  <option value="">Selecione</option>
+                  {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-1.5 text-sm font-semibold">
+                Município
+                <select key={selectedState} required name="municipality" disabled={!selectedState || loadingMunicipalities} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:bg-slate-100">
+                  <option value="">{loadingMunicipalities ? 'Carregando…' : selectedState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>
+                  {municipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}
+                </select>
+              </label>
             </div>
+            <Field label="WhatsApp" name="whatsapp" type="tel" />
             <Field label="E-mail profissional" name="email" type="email" />
             <Field label="Senha (mínimo de 8 caracteres)" name="password" type="password" />
             {error && <p role="alert" className={`rounded-xl border px-4 py-3 text-sm ${error.startsWith('Conta criada') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{error}</p>}
