@@ -1410,7 +1410,7 @@ function LoginScreen({
             <Field label="Nome completo" name="fullName" />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Cargo" name="jobTitle" />
-              <Field label="Número do Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
+              <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" />
             </div>
             <Field label="Endereço comercial" name="businessAddress" />
             <div className="grid gap-4 sm:grid-cols-2">

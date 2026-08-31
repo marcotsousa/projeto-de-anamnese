@@ -11,6 +11,11 @@ export async function POST(request: NextRequest) {
   const { fullName, email, password, jobTitle, council, businessAddress, municipality, whatsapp } = await request.json();
   if (!fullName?.trim() || !email?.trim() || !password)
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 });
+  if (!council?.trim())
+    return NextResponse.json(
+      { error: 'Informe o número do CRP para prosseguir com o cadastro.' },
+      { status: 400 },
+    );
   if (password.length < 8)
     return NextResponse.json({ error: 'A senha deve ter pelo menos 8 caracteres.' }, { status: 400 });
 
