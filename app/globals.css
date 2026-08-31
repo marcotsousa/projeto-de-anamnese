@@ -94,6 +94,16 @@ body {
   .panel-head p { @apply mt-0.5 text-xs text-slate-400; }
 }
 
+.registration-form input,
+.registration-form select,
+.registration-form input:-webkit-autofill,
+.registration-form input:-webkit-autofill:hover,
+.registration-form input:-webkit-autofill:focus {
+  background-color: #ffffff !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

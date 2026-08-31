@@ -1425,7 +1425,7 @@ function LoginScreen({
               {registering ? 'Informe seus dados profissionais para começar.' : 'Entre com suas credenciais para acessar os prontuários.'}
             </p>
           </div>
-          {registering ? <form onSubmit={register} autoComplete="off" className="space-y-4">
+          {registering ? <form onSubmit={register} autoComplete="off" className="registration-form space-y-4">
             <div className="pointer-events-none absolute -left-[9999px] opacity-0" aria-hidden="true">
               <input name="registration-email-trap" type="email" autoComplete="username" tabIndex={-1} />
               <input name="registration-password-trap" type="password" autoComplete="current-password" tabIndex={-1} />
