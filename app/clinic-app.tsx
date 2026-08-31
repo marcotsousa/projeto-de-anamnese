@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { supabase } from '@/lib/supabase';
 import {
   Activity,
   Bell,
@@ -221,6 +222,8 @@ function usePersistentState<T>(key: string, initialValue: T) {
 export default function ClinicApp() {
   const [authenticated, setAuthenticated] = useState(false);
   const [authReady, setAuthReady] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [cloudReady, setCloudReady] = useState(false);
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
     [tab, setTab] = useState('Resumo');
@@ -246,12 +249,60 @@ export default function ClinicApp() {
     [mobile, setMobile] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
-    setAuthenticated(
-      window.sessionStorage.getItem('projeto-anamnese:session') === 'active' ||
-        window.localStorage.getItem('projeto-anamnese:remember') === 'active',
-    );
-    setAuthReady(true);
+    if (!supabase) {
+      setAuthReady(true);
+      return;
+    }
+    supabase.auth.getSession().then(({ data }) => {
+      const user = data.session?.user;
+      setUserId(user?.id ?? null);
+      setAuthenticated(Boolean(user));
+      setAuthReady(true);
+    });
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user.id ?? null);
+      setAuthenticated(Boolean(session));
+    });
+    return () => data.subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!supabase || !userId) return;
+    setCloudReady(false);
+    supabase
+      .from('user_state')
+      .select('data')
+      .eq('user_id', userId)
+      .maybeSingle()
+      .then(({ data, error }) => {
+        if (!error && data?.data) {
+          const state = data.data as {
+            patients?: Patient[];
+            assessments?: Assessment[];
+            sessions?: Session[];
+            anamneses?: Record<string, AnamnesisRecord>;
+          };
+          if (state.patients) setPatients(state.patients);
+          if (state.assessments) setAssessments(state.assessments);
+          if (state.sessions) setSessions(state.sessions);
+          if (state.anamneses) setAnamneses(state.anamneses);
+        }
+        setCloudReady(true);
+      });
+  }, [userId]);
+
+  useEffect(() => {
+    if (!supabase || !userId || !cloudReady) return;
+    const cloud = supabase;
+    const timer = window.setTimeout(() => {
+      cloud.from('user_state').upsert({
+        user_id: userId,
+        data: { patients, assessments, sessions, anamneses },
+        updated_at: new Date().toISOString(),
+      });
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [userId, cloudReady, patients, assessments, sessions, anamneses]);
   const filtered = patients.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase()),
   );
@@ -333,16 +384,15 @@ export default function ClinicApp() {
     ]);
     close();
   }
-  function login(remember: boolean) {
-    window.sessionStorage.setItem('projeto-anamnese:session', 'active');
-    if (remember)
-      window.localStorage.setItem('projeto-anamnese:remember', 'active');
-    setAuthenticated(true);
+  async function login(email: string, password: string) {
+    if (!supabase) return 'Configuração do Supabase ausente.';
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return error ? 'E-mail ou senha incorretos.' : null;
   }
-  function logout() {
-    window.sessionStorage.removeItem('projeto-anamnese:session');
-    window.localStorage.removeItem('projeto-anamnese:remember');
+  async function logout() {
+    await supabase?.auth.signOut();
     setSelected(null);
+    setUserId(null);
     setAuthenticated(false);
   }
   function deletePatient(patient: Patient) {
@@ -1039,19 +1089,24 @@ function PatientView({
     </div>
   );
 }
-function LoginScreen({ onLogin }: { onLogin: (remember: boolean) => void }) {
+function LoginScreen({
+  onLogin,
+}: {
+  onLogin: (email: string, password: string) => Promise<string | null>;
+}) {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  const [loading, setLoading] = useState(false);
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const email = String(data.get('email')).trim().toLowerCase();
     const password = String(data.get('password'));
-    if (email !== 'marcotsousa@gmail.com' || password !== 'Marco@2026') {
-      setError('E-mail ou senha incorretos. Confira os dados de acesso local.');
-      return;
-    }
-    onLogin(data.get('remember') === 'on');
+    setLoading(true);
+    setError('');
+    const message = await onLogin(email, password);
+    if (message) setError(message);
+    setLoading(false);
   }
   return (
     <main className="grid min-h-screen bg-[#eef5f2] lg:grid-cols-[1.05fr_.95fr]">
@@ -1147,9 +1202,7 @@ function LoginScreen({ onLogin }: { onLogin: (remember: boolean) => void }) {
                 />
                 Manter conectado
               </label>
-              <button type="button" className="font-semibold text-teal-700">
-                Esqueci a senha
-              </button>
+              <span className="text-slate-400">Acesso protegido</span>
             </div>
             {error && (
               <p
@@ -1159,23 +1212,13 @@ function LoginScreen({ onLogin }: { onLogin: (remember: boolean) => void }) {
                 {error}
               </p>
             )}
-            <button className="h-12 w-full rounded-xl bg-[#176a68] font-semibold text-white shadow-sm transition hover:bg-[#125856]">
-              Entrar
+            <button disabled={loading} className="h-12 w-full rounded-xl bg-[#176a68] font-semibold text-white shadow-sm transition hover:bg-[#125856] disabled:opacity-60">
+              {loading ? 'Entrando…' : 'Entrar'}
             </button>
           </form>
-          <div className="mt-7 rounded-xl border border-slate-200 bg-white/70 p-4 text-xs leading-5 text-slate-500">
-            <strong className="text-slate-700">
-              Acesso local de demonstração
-            </strong>
-            <br />
-            E-mail: marcotsousa@gmail.com
-            <br />
-            Senha: Marco@2026
-          </div>
           <p className="mt-6 text-center text-[11px] leading-5 text-slate-400">
-            Esta barreira protege a interface local, mas não substitui
-            autenticação de servidor, criptografia e controle de acesso exigidos
-            em produção.
+            Sessão autenticada pelo Supabase. Os dados clínicos são isolados por
+            profissional com políticas de acesso no banco.
           </p>
         </div>
       </section>
