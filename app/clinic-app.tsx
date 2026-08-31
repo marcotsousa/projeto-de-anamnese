@@ -461,11 +461,13 @@ export default function ClinicApp() {
           </button>
           <div className="mt-3 flex items-center gap-3 rounded-xl bg-black/10 p-3">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-[#e1b893] text-sm font-bold text-[#6b4126]">
-              AM
+              MT
             </div>
             <div className="flex-1">
-              <p className="text-sm font-semibold">Ana Martins</p>
-              <p className="text-xs text-teal-100/55">CRP 06/123456</p>
+              <p className="text-sm font-semibold">Marco Tulio</p>
+              <p className="truncate text-xs text-teal-100/55">
+                marcotsousa@gmail.com
+              </p>
             </div>
             <button
               onClick={logout}
@@ -613,7 +615,7 @@ function Dashboard({
             Segunda-feira, 31 de agosto
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Bom dia, Ana.
+            Bom dia, Marco.
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Aqui está o panorama do seu consultório hoje.
@@ -1012,7 +1014,7 @@ function LoginScreen({ onLogin }: { onLogin: (remember: boolean) => void }) {
     const data = new FormData(event.currentTarget);
     const email = String(data.get('email')).trim().toLowerCase();
     const password = String(data.get('password'));
-    if (email !== 'ana@projeto.local' || password !== 'anamnese123') {
+    if (email !== 'marcotsousa@gmail.com' || password !== 'Marco@2026') {
       setError('E-mail ou senha incorretos. Confira os dados de acesso local.');
       return;
     }
@@ -1133,9 +1135,9 @@ function LoginScreen({ onLogin }: { onLogin: (remember: boolean) => void }) {
               Acesso local de demonstração
             </strong>
             <br />
-            E-mail: ana@projeto.local
+            E-mail: marcotsousa@gmail.com
             <br />
-            Senha: anamnese123
+            Senha: Marco@2026
           </div>
           <p className="mt-6 text-center text-[11px] leading-5 text-slate-400">
             Esta barreira protege a interface local, mas não substitui
@@ -1355,12 +1357,12 @@ function AnamnesisForm({
             <ShortField
               label="Nome do(a) psicólogo(a)"
               name="professionalName"
-              value={value?.professionalName ?? 'Ana Martins'}
+              value={value?.professionalName ?? 'Marco Tulio'}
             />
             <ShortField
               label="CRP (nº/região)"
               name="crp"
-              value={value?.crp ?? '06/123456'}
+              value={value?.crp ?? ''}
             />
           </div>
           <div className="mt-5 flex gap-3 rounded-xl bg-teal-50 p-4 text-sm leading-relaxed text-teal-800">
