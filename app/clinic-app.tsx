@@ -54,6 +54,27 @@ type Session = {
   note: string;
   next: string;
 };
+type AnamnesisRecord = {
+  patientId: number;
+  gender: string;
+  maritalOccupation: string;
+  education: string;
+  birthplaceResidence: string;
+  guardian: string;
+  interviewDate: string;
+  referredBy: string;
+  complaint: string;
+  currentHistory: string;
+  healthHistory: string;
+  familyHistory: string;
+  developmentRoutine: string;
+  initialImpressions: string;
+  city: string;
+  signedAt: string;
+  professionalName: string;
+  crp: string;
+  updatedAt: string;
+};
 const initialPatients: Patient[] = [
   {
     id: 1,
@@ -203,7 +224,10 @@ export default function ClinicApp() {
     [sessions, setSessions] = usePersistentState(
       'projeto-anamnese:sessions',
       initialSessions,
-    );
+    ),
+    [anamneses, setAnamneses] = usePersistentState<
+      Record<string, AnamnesisRecord>
+    >('projeto-anamnese:anamneses', {});
   const [query, setQuery] = useState(''),
     [modal, setModal] = useState<'patient' | 'session' | 'assessment' | null>(
       null,
@@ -219,11 +243,12 @@ export default function ClinicApp() {
       [
         JSON.stringify(
           {
-            version: 1,
+            version: 2,
             exportedAt: new Date().toISOString(),
             patients,
             assessments,
             sessions,
+            anamneses,
           },
           null,
           2,
@@ -253,6 +278,7 @@ export default function ClinicApp() {
         setPatients(data.patients);
         setAssessments(data.assessments);
         setSessions(data.sessions);
+        setAnamneses(data.anamneses ?? {});
         setSelected(null);
         window.alert('Backup importado com sucesso.');
       } catch {
@@ -474,6 +500,13 @@ export default function ClinicApp() {
                 (a) => a.patientId === selected.id,
               )}
               sessions={sessions.filter((s) => s.patientId === selected.id)}
+              anamnesis={anamneses[String(selected.id)]}
+              saveAnamnesis={(record) =>
+                setAnamneses((current) => ({
+                  ...current,
+                  [String(selected.id)]: record,
+                }))
+              }
               back={() => setSelected(null)}
               open={setModal}
             />
@@ -761,6 +794,8 @@ function PatientView({
   setTab,
   assessments,
   sessions,
+  anamnesis,
+  saveAnamnesis,
   back,
   open,
 }: {
@@ -769,6 +804,8 @@ function PatientView({
   setTab: (s: string) => void;
   assessments: Assessment[];
   sessions: Session[];
+  anamnesis?: AnamnesisRecord;
+  saveAnamnesis: (record: AnamnesisRecord) => void;
   back: () => void;
   open: (m: 'session' | 'assessment') => void;
 }) {
@@ -849,31 +886,7 @@ function PatientView({
         </div>
       )}
       {tab === 'Anamnese' && (
-        <section className="panel mt-6 p-6">
-          <div className="mb-6 flex justify-between">
-            <div>
-              <h2 className="text-lg font-bold">Anamnese psicológica</h2>
-              <p className="text-sm text-slate-500">
-                Atualizada em 18 de agosto de 2026
-              </p>
-            </div>
-            <button className="rounded-xl border px-4 py-2 text-sm font-semibold">
-              Editar
-            </button>
-          </div>
-          <Info
-            title="Queixa inicial"
-            text="Ansiedade persistente, dificuldade para dormir, ruminação e sensação de sobrecarga associada ao trabalho."
-          />
-          <Info
-            title="Histórico e contexto"
-            text="Sintomas iniciados há oito meses. Sem histórico de internações psiquiátricas. Mantém boa rede de apoio familiar."
-          />
-          <Info
-            title="Plano de atendimento e metas terapêuticas"
-            text="Reduzir sintomas ansiosos, ampliar regulação emocional, melhorar o sono e desenvolver limites saudáveis no trabalho."
-          />
-        </section>
+        <AnamnesisForm patient={p} value={anamnesis} onSave={saveAnamnesis} />
       )}
       {tab === 'Evolução' && (
         <section className="panel mt-6">
@@ -947,6 +960,265 @@ function PatientView({
         </section>
       )}
     </div>
+  );
+}
+function AnamnesisForm({
+  patient,
+  value,
+  onSave,
+}: {
+  patient: Patient;
+  value?: AnamnesisRecord;
+  onSave: (record: AnamnesisRecord) => void;
+}) {
+  const [saved, setSaved] = useState(false);
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const read = (key: string) => String(data.get(key) ?? '');
+    onSave({
+      patientId: patient.id,
+      gender: read('gender'),
+      maritalOccupation: read('maritalOccupation'),
+      education: read('education'),
+      birthplaceResidence: read('birthplaceResidence'),
+      guardian: read('guardian'),
+      interviewDate: read('interviewDate'),
+      referredBy: read('referredBy'),
+      complaint: read('complaint'),
+      currentHistory: read('currentHistory'),
+      healthHistory: read('healthHistory'),
+      familyHistory: read('familyHistory'),
+      developmentRoutine: read('developmentRoutine'),
+      initialImpressions: read('initialImpressions'),
+      city: read('city'),
+      signedAt: read('signedAt'),
+      professionalName: read('professionalName'),
+      crp: read('crp'),
+      updatedAt: new Date().toISOString(),
+    });
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 2500);
+  }
+  return (
+    <form onSubmit={submit} className="panel mt-6 overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-6 py-5">
+        <div>
+          <h2 className="text-lg font-bold">Ficha de Anamnese Psicológica</h2>
+          <p className="text-sm text-slate-500">
+            {value?.updatedAt
+              ? `Última atualização: ${new Date(value.updatedAt).toLocaleString('pt-BR')}`
+              : 'Preencha a entrevista inicial do paciente'}
+          </p>
+        </div>
+        <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">
+          {saved ? 'Salvo com sucesso' : 'Salvar anamnese'}
+        </button>
+      </div>
+      <div className="space-y-8 p-6">
+        <AnamnesisSection number="1" title="Identificação">
+          <div className="grid gap-4 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2">
+            <ReadOnly label="Paciente" value={patient.name} />
+            <ReadOnly
+              label="Nascimento / idade"
+              value={`${patient.birth} — ${patient.age} anos`}
+            />
+            <ShortField
+              label="Sexo / gênero (autodeclaração)"
+              name="gender"
+              value={value?.gender}
+            />
+            <ShortField
+              label="Estado civil / ocupação"
+              name="maritalOccupation"
+              value={value?.maritalOccupation}
+            />
+            <ShortField
+              label="Escolaridade"
+              name="education"
+              value={value?.education}
+            />
+            <ShortField
+              label="Naturalidade / residência (cidade/UF)"
+              name="birthplaceResidence"
+              value={value?.birthplaceResidence}
+            />
+            <ShortField
+              label="Responsável e vínculo, quando aplicável"
+              name="guardian"
+              value={value?.guardian}
+            />
+            <ShortField
+              label="Data da entrevista"
+              name="interviewDate"
+              type="date"
+              value={value?.interviewDate}
+            />
+            <div className="sm:col-span-2">
+              <ShortField
+                label="Encaminhado(a) por"
+                name="referredBy"
+                value={value?.referredBy}
+                placeholder="Procura espontânea, profissional ou instituição"
+              />
+            </div>
+          </div>
+        </AnamnesisSection>
+        <AnamnesisSection number="2" title="Queixa / demanda">
+          <LongField
+            name="complaint"
+            value={value?.complaint}
+            prompt="Motivo da procura, preferencialmente nas palavras do próprio paciente ou do responsável."
+          />
+        </AnamnesisSection>
+        <AnamnesisSection number="3" title="História da queixa atual">
+          <LongField
+            name="currentHistory"
+            value={value?.currentHistory}
+            prompt="Início, evolução, frequência e intensidade; fatores que agravam ou aliviam; tentativas anteriores de ajuda e tratamentos."
+          />
+        </AnamnesisSection>
+        <AnamnesisSection number="4" title="Antecedentes pessoais e de saúde">
+          <LongField
+            name="healthHistory"
+            value={value?.healthHistory}
+            prompt="Saúde física e mental; acompanhamentos psicológicos ou psiquiátricos; medicação; internações e condições clínicas relevantes."
+          />
+        </AnamnesisSection>
+        <AnamnesisSection number="5" title="História familiar">
+          <LongField
+            name="familyHistory"
+            value={value?.familyHistory}
+            prompt="Composição familiar; relações significativas; antecedentes de saúde; dinâmica e rede de apoio."
+          />
+        </AnamnesisSection>
+        <AnamnesisSection number="6" title="Desenvolvimento / rotina">
+          <LongField
+            name="developmentRoutine"
+            value={value?.developmentRoutine}
+            prompt="Marcos do desenvolvimento; escolaridade ou trabalho; sono; alimentação; lazer; hábitos e rotina atual."
+          />
+        </AnamnesisSection>
+        <AnamnesisSection number="7" title="Observações / impressões iniciais">
+          <LongField
+            name="initialImpressions"
+            value={value?.initialImpressions}
+            prompt="Observações profissionais, hipóteses preliminares e próximos passos, sem juízo de valor ou diagnóstico categórico."
+          />
+        </AnamnesisSection>
+        <section className="rounded-2xl border border-slate-200 p-5">
+          <h3 className="mb-4 font-bold text-slate-800">
+            Fechamento e responsabilidade técnica
+          </h3>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <ShortField label="Cidade" name="city" value={value?.city} />
+            <ShortField
+              label="Data"
+              name="signedAt"
+              type="date"
+              value={value?.signedAt}
+            />
+            <ShortField
+              label="Nome do(a) psicólogo(a)"
+              name="professionalName"
+              value={value?.professionalName ?? 'Ana Martins'}
+            />
+            <ShortField
+              label="CRP (nº/região)"
+              name="crp"
+              value={value?.crp ?? '06/123456'}
+            />
+          </div>
+          <div className="mt-5 flex gap-3 rounded-xl bg-teal-50 p-4 text-sm leading-relaxed text-teal-800">
+            <ShieldCheck className="mt-0.5 shrink-0" size={20} />
+            <p>
+              Instrumento clínico de coleta inicial; integra o prontuário e é
+              protegido pelo sigilo profissional. A guarda e a responsabilidade
+              técnica são do(a) psicólogo(a) que o assina.
+            </p>
+          </div>
+        </section>
+      </div>
+    </form>
+  );
+}
+function AnamnesisSection({
+  number,
+  title,
+  children,
+}: {
+  number: string;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section>
+      <div className="mb-3 flex items-center gap-3">
+        <span className="grid h-7 w-7 place-items-center rounded-lg bg-teal-100 text-xs font-bold text-teal-700">
+          {number}
+        </span>
+        <h3 className="font-bold text-slate-800">{title}</h3>
+      </div>
+      {children}
+    </section>
+  );
+}
+function ShortField({
+  label,
+  name,
+  value,
+  type = 'text',
+  placeholder,
+}: {
+  label: string;
+  name: string;
+  value?: string;
+  type?: string;
+  placeholder?: string;
+}) {
+  return (
+    <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
+      {label}
+      <input
+        name={name}
+        type={type}
+        defaultValue={value}
+        placeholder={placeholder}
+        className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal outline-none focus:border-teal-500"
+      />
+    </label>
+  );
+}
+function ReadOnly({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-sm font-semibold text-slate-700">{label}</p>
+      <p className="mt-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-500">
+        {value}
+      </p>
+    </div>
+  );
+}
+function LongField({
+  name,
+  value,
+  prompt,
+}: {
+  name: string;
+  value?: string;
+  prompt: string;
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-xs leading-relaxed text-slate-500">{prompt}</span>
+      <textarea
+        name={name}
+        defaultValue={value}
+        rows={5}
+        className="resize-y rounded-xl border border-slate-200 p-3 text-sm leading-relaxed outline-none focus:border-teal-500"
+        placeholder="Registre as informações coletadas na entrevista..."
+      />
+    </label>
   );
 }
 function Metric({
