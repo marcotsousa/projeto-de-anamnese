@@ -492,7 +492,7 @@ export default function ClinicApp() {
             <div className="text-sm font-bold leading-tight">
               Projeto de Anamnese
             </div>
-            <div className="text-[11px] text-teal-100/70">Versão local</div>
+            <div className="text-[11px] text-teal-100/70">Nuvem segura</div>
           </div>
           <button
             className="ml-auto md:hidden"
@@ -1119,7 +1119,7 @@ function LoginScreen({
           </div>
           <div>
             <p className="font-bold">Projeto de Anamnese</p>
-            <p className="text-xs text-teal-100/60">Gestão clínica local</p>
+            <p className="text-xs text-teal-100/60">Gestão clínica segura</p>
           </div>
         </div>
         <div className="relative max-w-lg">
@@ -1135,7 +1135,7 @@ function LoginScreen({
           </p>
         </div>
         <p className="relative text-xs text-teal-100/45">
-          Versão local · Dados armazenados neste computador
+          Acesso protegido · Dados sincronizados com segurança
         </p>
       </section>
       <section className="flex items-center justify-center p-6 sm:p-10">
@@ -1146,7 +1146,7 @@ function LoginScreen({
             </div>
             <div>
               <p className="font-bold text-slate-800">Projeto de Anamnese</p>
-              <p className="text-xs text-slate-500">Gestão clínica local</p>
+              <p className="text-xs text-slate-500">Gestão clínica segura</p>
             </div>
           </div>
           <div className="mb-7">
