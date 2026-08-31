@@ -1320,6 +1320,7 @@ function LoginScreen({
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [registering, setRegistering] = useState(false);
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -1329,6 +1330,28 @@ function LoginScreen({
     setError('');
     const message = await onLogin(email, password);
     if (message) setError(message);
+    setLoading(false);
+  }
+  async function register(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const values = Object.fromEntries(new FormData(form));
+    setLoading(true);
+    setError('');
+    const response = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setError(result.error || 'Não foi possível criar a conta.');
+      setLoading(false);
+      return;
+    }
+    setRegistering(false);
+    form.reset();
+    setError('Conta criada com sucesso. Use seu e-mail e senha para entrar.');
     setLoading(false);
   }
   return (
@@ -1377,13 +1400,33 @@ function LoginScreen({
               <LockKeyhole size={21} />
             </span>
             <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-              Acesse sua conta
+              {registering ? 'Crie sua conta' : 'Acesse sua conta'}
             </h2>
             <p className="mt-2 text-sm text-slate-500">
-              Entre com suas credenciais para acessar os prontuários.
+              {registering ? 'Informe seus dados profissionais para começar.' : 'Entre com suas credenciais para acessar os prontuários.'}
             </p>
           </div>
-          <form onSubmit={submit} className="space-y-5">
+          {registering ? <form onSubmit={register} className="space-y-4">
+            <Field label="Nome completo" name="fullName" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Cargo" name="jobTitle" />
+              <Field label="Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
+            </div>
+            <Field label="Endereço comercial" name="businessAddress" />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Município" name="municipality" />
+              <Field label="WhatsApp" name="whatsapp" type="tel" />
+            </div>
+            <Field label="E-mail profissional" name="email" type="email" />
+            <Field label="Senha (mínimo de 8 caracteres)" name="password" type="password" />
+            {error && <p role="alert" className={`rounded-xl border px-4 py-3 text-sm ${error.startsWith('Conta criada') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{error}</p>}
+            <button disabled={loading} className="h-12 w-full rounded-xl bg-[#176a68] font-semibold text-white disabled:opacity-60">
+              {loading ? 'Criando conta…' : 'Criar conta'}
+            </button>
+            <button type="button" onClick={() => { setRegistering(false); setError(''); }} className="w-full text-sm font-semibold text-teal-700 hover:underline">
+              Já tenho uma conta
+            </button>
+          </form> : <form onSubmit={submit} className="space-y-5">
             <label className="grid gap-2 text-sm font-semibold text-slate-700">
               E-mail profissional
               <input
@@ -1438,7 +1481,13 @@ function LoginScreen({
             <button disabled={loading} className="h-12 w-full rounded-xl bg-[#176a68] font-semibold text-white shadow-sm transition hover:bg-[#125856] disabled:opacity-60">
               {loading ? 'Entrando…' : 'Entrar'}
             </button>
-          </form>
+            <p className="text-center text-sm text-slate-600">
+              Ainda não possui acesso?{' '}
+              <button type="button" onClick={() => { setRegistering(true); setError(''); }} className="font-semibold text-teal-700 hover:underline">
+                Criar minha conta
+              </button>
+            </p>
+          </form>}
           <p className="mt-6 text-center text-[11px] leading-5 text-slate-400">
             Sessão autenticada pelo Supabase. Os dados clínicos são isolados por
             profissional com políticas de acesso no banco.
