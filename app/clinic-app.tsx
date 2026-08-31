@@ -1443,7 +1443,7 @@ function LoginScreen({
               </label>
               <label className="grid gap-1.5 text-sm font-semibold">
                 Município
-                <select key={selectedState} required name="municipality" disabled={!selectedState || loadingMunicipalities} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:bg-slate-100">
+                <select key={selectedState} required name="municipality" disabled={!selectedState || loadingMunicipalities} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:bg-white disabled:text-slate-500">
                   <option value="">{loadingMunicipalities ? 'Carregando…' : selectedState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>
                   {municipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}
                 </select>
@@ -2029,7 +2029,7 @@ const Field = ({
       type={type}
       autoComplete={autoComplete ?? (type === 'password' ? 'new-password' : 'off')}
       placeholder={placeholder}
-      className="h-11 rounded-xl border px-3 font-normal outline-none focus:border-teal-500"
+      className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500"
     />
   </label>
 );
