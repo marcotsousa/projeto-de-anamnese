@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Sereno — Gestão clínica para psicólogos',
+  title: 'Projeto de Anamnese — Gestão clínica',
   description: 'Prontuário psicológico, evolução clínica e instrumentos de rastreio em um só lugar.',
 };
 

@@ -1,4 +1,4 @@
-# Sereno — Gestão clínica
+# Projeto de Anamnese — Gestão clínica
 
 Aplicação responsiva para prontuários psicológicos, anamnese, evolução de sessões e rastreios clínicos. O acesso é protegido pela autenticação da plataforma e todas as consultas devem usar o identificador do profissional autenticado como filtro de propriedade.
 
