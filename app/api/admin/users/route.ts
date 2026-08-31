@@ -85,3 +85,37 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: profileError.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }
+
+export async function PATCH(request: NextRequest) {
+  const admin = await authorize(request);
+  if (!admin) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const { userId, role } = await request.json();
+  if (!userId || !['administrador', 'psicologo', 'administrativo'].includes(role))
+    return NextResponse.json({ error: 'Usuário ou perfil inválido.' }, { status: 400 });
+
+  const { data: currentProfile } = await admin
+    .from('profiles')
+    .select('role')
+    .eq('user_id', userId)
+    .single();
+  if (!currentProfile)
+    return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+  if (currentProfile.role === 'administrador' && role !== 'administrador') {
+    const { count } = await admin
+      .from('profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('role', 'administrador');
+    if ((count ?? 0) <= 1)
+      return NextResponse.json(
+        { error: 'Cadastre outro Administrador antes de alterar o último acesso administrativo.' },
+        { status: 400 },
+      );
+  }
+
+  const { error } = await admin
+    .from('profiles')
+    .update({ role })
+    .eq('user_id', userId);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ ok: true });
+}

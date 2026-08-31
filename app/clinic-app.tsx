@@ -1006,6 +1006,7 @@ function UserManagement() {
   }>>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [savingUserId, setSavingUserId] = useState('');
   async function request(path: string, options?: RequestInit) {
     const { data } = await supabase!.auth.getSession();
     return fetch(path, {
@@ -1042,12 +1043,28 @@ function UserManagement() {
     setMessage('Usuário criado com sucesso.');
     await load();
   }
+  async function assignRole(userId: string, role: UserRole) {
+    setSavingUserId(userId);
+    setMessage('Atualizando função…');
+    const response = await request('/api/admin/users', {
+      method: 'PATCH',
+      body: JSON.stringify({ userId, role }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setSavingUserId('');
+      return setMessage(result.error || 'Falha ao atualizar a função.');
+    }
+    setUsers((current) => current.map((user) => user.id === userId ? { ...user, role } : user));
+    setSavingUserId('');
+    setMessage('Função atualizada com sucesso.');
+  }
   const roleLabel = { administrador: 'Administrador', psicologo: 'Psicólogo', administrativo: 'Administrativo' };
   return (
     <div className="mx-auto max-w-7xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Usuários e perfis</h1>
-        <p className="mt-1 text-sm text-slate-500">Cadastre profissionais e defina o nível de acesso.</p>
+        <p className="mt-1 text-sm text-slate-500">Cadastre profissionais, verifique e atribua seus níveis de acesso.</p>
       </div>
       <div className="grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
         <form onSubmit={create} className="panel space-y-4 p-6">
@@ -1080,14 +1097,27 @@ function UserManagement() {
           {loading ? <p className="p-6 text-sm text-slate-400">Carregando…</p> : (
             <div className="divide-y divide-slate-100">
               {users.map((user) => (
-                <div key={user.id} className="flex items-center gap-4 p-5">
+                <div key={user.id} className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
                   <div className="grid h-10 w-10 place-items-center rounded-full bg-teal-50 font-bold text-teal-700">{(user.fullName || user.email)[0].toUpperCase()}</div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold">{user.fullName || 'Sem nome'}</p>
                     <p className="truncate text-xs text-slate-500">{user.jobTitle || roleLabel[user.role]} · {user.council || 'Sem conselho'}</p>
                     <p className="truncate text-xs text-slate-400">{user.email} · {user.whatsapp || 'Sem WhatsApp'}</p>
                   </div>
-                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{roleLabel[user.role]}</span>
+                  <label className="grid min-w-48 gap-1 text-xs font-semibold text-slate-500">
+                    Função de acesso
+                    <select
+                      value={user.role}
+                      disabled={savingUserId === user.id}
+                      onChange={(event) => assignRole(user.id, event.target.value as UserRole)}
+                      className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-medium text-slate-700 disabled:opacity-60"
+                      aria-label={`Função de ${user.fullName || user.email}`}
+                    >
+                      <option value="administrador">Administrador</option>
+                      <option value="psicologo">Psicólogo</option>
+                      <option value="administrativo">Administrativo</option>
+                    </select>
+                  </label>
                 </div>
               ))}
             </div>
