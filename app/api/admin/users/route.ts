@@ -27,7 +27,9 @@ export async function GET(request: NextRequest) {
   if (!admin) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
   const [{ data: authData, error }, { data: profiles }] = await Promise.all([
     admin.auth.admin.listUsers(),
-    admin.from('profiles').select('user_id, full_name, role'),
+    admin
+      .from('profiles')
+      .select('user_id, full_name, role, job_title, council, business_address, municipality, whatsapp'),
   ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   const byId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
@@ -37,6 +39,11 @@ export async function GET(request: NextRequest) {
       email: user.email,
       fullName: byId.get(user.id)?.full_name ?? '',
       role: byId.get(user.id)?.role ?? 'psicologo',
+      jobTitle: byId.get(user.id)?.job_title ?? '',
+      council: byId.get(user.id)?.council ?? '',
+      businessAddress: byId.get(user.id)?.business_address ?? '',
+      municipality: byId.get(user.id)?.municipality ?? '',
+      whatsapp: byId.get(user.id)?.whatsapp ?? '',
     })),
   );
 }
@@ -44,7 +51,17 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const admin = await authorize(request);
   if (!admin) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
-  const { fullName, email, password, role } = await request.json();
+  const {
+    fullName,
+    email,
+    password,
+    role,
+    jobTitle,
+    council,
+    businessAddress,
+    municipality,
+    whatsapp,
+  } = await request.json();
   if (!['administrador', 'psicologo', 'administrativo'].includes(role))
     return NextResponse.json({ error: 'Perfil inválido.' }, { status: 400 });
   const { data, error } = await admin.auth.admin.createUser({
@@ -58,6 +75,11 @@ export async function POST(request: NextRequest) {
     user_id: data.user.id,
     full_name: fullName,
     role,
+    job_title: jobTitle,
+    council,
+    business_address: businessAddress,
+    municipality,
+    whatsapp,
   });
   if (profileError)
     return NextResponse.json({ error: profileError.message }, { status: 400 });

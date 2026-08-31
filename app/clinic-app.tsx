@@ -993,7 +993,17 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
 }
 
 function UserManagement() {
-  const [users, setUsers] = useState<Array<{ id: string; email: string; fullName: string; role: UserRole }>>([]);
+  const [users, setUsers] = useState<Array<{
+    id: string;
+    email: string;
+    fullName: string;
+    role: UserRole;
+    jobTitle: string;
+    council: string;
+    businessAddress: string;
+    municipality: string;
+    whatsapp: string;
+  }>>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   async function request(path: string, options?: RequestInit) {
@@ -1043,6 +1053,15 @@ function UserManagement() {
         <form onSubmit={create} className="panel space-y-4 p-6">
           <h2 className="text-lg font-bold">Novo usuário</h2>
           <Field label="Nome completo" name="fullName" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Cargo" name="jobTitle" />
+            <Field label="Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
+          </div>
+          <Field label="Endereço comercial" name="businessAddress" />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Município" name="municipality" />
+            <Field label="WhatsApp" name="whatsapp" type="tel" />
+          </div>
           <Field label="E-mail" name="email" type="email" />
           <Field label="Senha provisória" name="password" type="password" />
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
@@ -1063,7 +1082,11 @@ function UserManagement() {
               {users.map((user) => (
                 <div key={user.id} className="flex items-center gap-4 p-5">
                   <div className="grid h-10 w-10 place-items-center rounded-full bg-teal-50 font-bold text-teal-700">{(user.fullName || user.email)[0].toUpperCase()}</div>
-                  <div className="min-w-0 flex-1"><p className="truncate font-semibold">{user.fullName || 'Sem nome'}</p><p className="truncate text-xs text-slate-500">{user.email}</p></div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold">{user.fullName || 'Sem nome'}</p>
+                    <p className="truncate text-xs text-slate-500">{user.jobTitle || roleLabel[user.role]} · {user.council || 'Sem conselho'}</p>
+                    <p className="truncate text-xs text-slate-400">{user.email} · {user.whatsapp || 'Sem WhatsApp'}</p>
+                  </div>
                   <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{roleLabel[user.role]}</span>
                 </div>
               ))}
