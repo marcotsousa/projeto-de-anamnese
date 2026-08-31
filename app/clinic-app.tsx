@@ -1062,7 +1062,7 @@ function UserManagement() {
         <p className="mt-1 text-sm text-slate-500">Cadastre profissionais, verifique e atribua seus níveis de acesso.</p>
       </div>
       <div className="grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
-        <form onSubmit={create} className="panel space-y-4 p-6">
+        <form onSubmit={create} autoComplete="off" className="panel space-y-4 p-6">
           <h2 className="text-lg font-bold">Novo usuário</h2>
           <Field label="Nome completo" name="fullName" />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1368,6 +1368,7 @@ function LoginScreen({
       return;
     }
     setRegistering(false);
+    setSelectedState('');
     form.reset();
     setError('Conta criada com sucesso. Use seu e-mail e senha para entrar.');
     setLoading(false);
@@ -1424,7 +1425,7 @@ function LoginScreen({
               {registering ? 'Informe seus dados profissionais para começar.' : 'Entre com suas credenciais para acessar os prontuários.'}
             </p>
           </div>
-          {registering ? <form onSubmit={register} className="space-y-4">
+          {registering ? <form onSubmit={register} autoComplete="off" className="space-y-4">
             <Field label="Nome completo" name="fullName" />
             <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" />
             <Field label="Endereço comercial" name="businessAddress" />
@@ -1511,7 +1512,7 @@ function LoginScreen({
             </button>
             <p className="text-center text-sm text-slate-600">
               Ainda não possui acesso?{' '}
-              <button type="button" onClick={() => { setRegistering(true); setError(''); }} className="font-semibold text-teal-700 hover:underline">
+              <button type="button" onClick={() => { setRegistering(true); setSelectedState(''); setError(''); }} className="font-semibold text-teal-700 hover:underline">
                 Criar minha conta
               </button>
             </p>
@@ -2020,6 +2021,7 @@ const Field = ({
       required
       name={name}
       type={type}
+      autoComplete={type === 'password' ? 'new-password' : 'off'}
       placeholder={placeholder}
       className="h-11 rounded-xl border px-3 font-normal outline-none focus:border-teal-500"
     />
