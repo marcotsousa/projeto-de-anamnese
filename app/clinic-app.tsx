@@ -9,8 +9,11 @@ import {
   ClipboardCheck,
   FileText,
   Download,
+  Eye,
+  EyeOff,
   HeartPulse,
   LayoutDashboard,
+  LockKeyhole,
   LogOut,
   Menu,
   Plus,
@@ -215,6 +218,8 @@ function usePersistentState<T>(key: string, initialValue: T) {
 }
 
 export default function ClinicApp() {
+  const [authenticated, setAuthenticated] = useState(false);
+  const [authReady, setAuthReady] = useState(false);
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
     [tab, setTab] = useState('Resumo');
@@ -239,6 +244,13 @@ export default function ClinicApp() {
     ),
     [mobile, setMobile] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    setAuthenticated(
+      window.sessionStorage.getItem('projeto-anamnese:session') === 'active' ||
+        window.localStorage.getItem('projeto-anamnese:remember') === 'active',
+    );
+    setAuthReady(true);
+  }, []);
   const filtered = patients.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase()),
   );
@@ -320,6 +332,18 @@ export default function ClinicApp() {
     ]);
     close();
   }
+  function login(remember: boolean) {
+    window.sessionStorage.setItem('projeto-anamnese:session', 'active');
+    if (remember)
+      window.localStorage.setItem('projeto-anamnese:remember', 'active');
+    setAuthenticated(true);
+  }
+  function logout() {
+    window.sessionStorage.removeItem('projeto-anamnese:session');
+    window.localStorage.removeItem('projeto-anamnese:remember');
+    setSelected(null);
+    setAuthenticated(false);
+  }
   function addSession(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selected) return;
@@ -377,6 +401,13 @@ export default function ClinicApp() {
     close();
     setTab('Avaliações');
   }
+  if (!authReady)
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#eef5f2] text-sm text-teal-800">
+        Carregando acesso seguro…
+      </div>
+    );
+  if (!authenticated) return <LoginScreen onLogin={login} />;
   return (
     <div className="min-h-screen bg-[#f4f7f6] text-slate-800">
       <aside
@@ -436,7 +467,13 @@ export default function ClinicApp() {
               <p className="text-sm font-semibold">Ana Martins</p>
               <p className="text-xs text-teal-100/55">CRP 06/123456</p>
             </div>
-            <LogOut size={16} />
+            <button
+              onClick={logout}
+              title="Sair"
+              className="rounded-lg p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
       </aside>
@@ -967,6 +1004,150 @@ function PatientView({
     </div>
   );
 }
+function LoginScreen({ onLogin }: { onLogin: (remember: boolean) => void }) {
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const email = String(data.get('email')).trim().toLowerCase();
+    const password = String(data.get('password'));
+    if (email !== 'ana@projeto.local' || password !== 'anamnese123') {
+      setError('E-mail ou senha incorretos. Confira os dados de acesso local.');
+      return;
+    }
+    onLogin(data.get('remember') === 'on');
+  }
+  return (
+    <main className="grid min-h-screen bg-[#eef5f2] lg:grid-cols-[1.05fr_.95fr]">
+      <section className="relative hidden overflow-hidden bg-[#123f42] p-12 text-white lg:flex lg:flex-col lg:justify-between">
+        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border-[60px] border-white/5" />
+        <div className="absolute -bottom-32 left-20 h-96 w-96 rounded-full bg-teal-300/5" />
+        <div className="relative flex items-center gap-3">
+          <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d9f0e8] text-[#19595a]">
+            <Brain size={25} />
+          </div>
+          <div>
+            <p className="font-bold">Projeto de Anamnese</p>
+            <p className="text-xs text-teal-100/60">Gestão clínica local</p>
+          </div>
+        </div>
+        <div className="relative max-w-lg">
+          <div className="mb-7 grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
+            <ShieldCheck size={27} />
+          </div>
+          <h1 className="text-4xl font-bold leading-tight tracking-tight">
+            Cuidado clínico começa com uma escuta organizada.
+          </h1>
+          <p className="mt-5 max-w-md text-base leading-7 text-teal-50/65">
+            Anamnese, evolução e instrumentos de rastreio reunidos em um
+            ambiente claro para apoiar seu trabalho.
+          </p>
+        </div>
+        <p className="relative text-xs text-teal-100/45">
+          Versão local · Dados armazenados neste computador
+        </p>
+      </section>
+      <section className="flex items-center justify-center p-6 sm:p-10">
+        <div className="w-full max-w-md">
+          <div className="mb-9 flex items-center gap-3 lg:hidden">
+            <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#176a68] text-white">
+              <Brain size={22} />
+            </div>
+            <div>
+              <p className="font-bold text-slate-800">Projeto de Anamnese</p>
+              <p className="text-xs text-slate-500">Gestão clínica local</p>
+            </div>
+          </div>
+          <div className="mb-7">
+            <span className="mb-4 inline-grid h-11 w-11 place-items-center rounded-xl bg-teal-50 text-teal-700">
+              <LockKeyhole size={21} />
+            </span>
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900">
+              Acesse sua conta
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Entre com suas credenciais para acessar os prontuários.
+            </p>
+          </div>
+          <form onSubmit={submit} className="space-y-5">
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              E-mail profissional
+              <input
+                name="email"
+                type="email"
+                required
+                autoComplete="username"
+                placeholder="seu@email.com"
+                className="h-12 rounded-xl border border-slate-200 bg-white px-4 font-normal outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"
+              />
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Senha
+              <div className="relative">
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  autoComplete="current-password"
+                  placeholder="Digite sua senha"
+                  className="h-12 w-full rounded-xl border border-slate-200 bg-white px-4 pr-12 font-normal outline-none transition focus:border-teal-500 focus:ring-4 focus:ring-teal-500/10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-700"
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
+            </label>
+            <div className="flex items-center justify-between text-sm">
+              <label className="flex items-center gap-2 text-slate-600">
+                <input
+                  name="remember"
+                  type="checkbox"
+                  className="h-4 w-4 accent-teal-700"
+                />
+                Manter conectado
+              </label>
+              <button type="button" className="font-semibold text-teal-700">
+                Esqueci a senha
+              </button>
+            </div>
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+              >
+                {error}
+              </p>
+            )}
+            <button className="h-12 w-full rounded-xl bg-[#176a68] font-semibold text-white shadow-sm transition hover:bg-[#125856]">
+              Entrar
+            </button>
+          </form>
+          <div className="mt-7 rounded-xl border border-slate-200 bg-white/70 p-4 text-xs leading-5 text-slate-500">
+            <strong className="text-slate-700">
+              Acesso local de demonstração
+            </strong>
+            <br />
+            E-mail: ana@projeto.local
+            <br />
+            Senha: anamnese123
+          </div>
+          <p className="mt-6 text-center text-[11px] leading-5 text-slate-400">
+            Esta barreira protege a interface local, mas não substitui
+            autenticação de servidor, criptografia e controle de acesso exigidos
+            em produção.
+          </p>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function AnamnesisForm({
   patient,
   value,
