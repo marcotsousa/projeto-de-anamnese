@@ -1426,9 +1426,13 @@ function LoginScreen({
             </p>
           </div>
           {registering ? <form onSubmit={register} autoComplete="off" className="space-y-4">
-            <Field label="Nome completo" name="fullName" />
-            <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" />
-            <Field label="Endereço comercial" name="businessAddress" />
+            <div className="pointer-events-none absolute -left-[9999px] opacity-0" aria-hidden="true">
+              <input name="registration-email-trap" type="email" autoComplete="username" tabIndex={-1} />
+              <input name="registration-password-trap" type="password" autoComplete="current-password" tabIndex={-1} />
+            </div>
+            <Field label="Nome completo" name="fullName" autoComplete="new-password" />
+            <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" autoComplete="new-password" />
+            <Field label="Endereço comercial" name="businessAddress" autoComplete="new-password" />
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-semibold">
                 Estado (UF)
@@ -1445,9 +1449,9 @@ function LoginScreen({
                 </select>
               </label>
             </div>
-            <Field label="WhatsApp" name="whatsapp" type="tel" />
-            <Field label="E-mail profissional" name="email" type="email" />
-            <Field label="Senha (mínimo de 8 caracteres)" name="password" type="password" />
+            <Field label="WhatsApp" name="whatsapp" type="tel" autoComplete="new-password" />
+            <Field label="E-mail profissional" name="email" type="email" autoComplete="new-password" />
+            <Field label="Senha (mínimo de 8 caracteres)" name="password" type="password" autoComplete="new-password" />
             {error && <p role="alert" className={`rounded-xl border px-4 py-3 text-sm ${error.startsWith('Conta criada') ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{error}</p>}
             <button disabled={loading} className="h-12 w-full rounded-xl bg-[#176a68] font-semibold text-white disabled:opacity-60">
               {loading ? 'Criando conta…' : 'Criar conta'}
@@ -2009,11 +2013,13 @@ const Field = ({
   name,
   type = 'text',
   placeholder,
+  autoComplete,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
+  autoComplete?: string;
 }) => (
   <label className="grid gap-1.5 text-sm font-semibold">
     {label}
@@ -2021,7 +2027,7 @@ const Field = ({
       required
       name={name}
       type={type}
-      autoComplete={type === 'password' ? 'new-password' : 'off'}
+      autoComplete={autoComplete ?? (type === 'password' ? 'new-password' : 'off')}
       placeholder={placeholder}
       className="h-11 rounded-xl border px-3 font-normal outline-none focus:border-teal-500"
     />
