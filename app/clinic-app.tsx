@@ -63,6 +63,11 @@ type AnamnesisRecord = {
   guardian: string;
   interviewDate: string;
   referredBy: string;
+  searchMotivation: string;
+  emotionalHistory: string;
+  supportNetwork: string;
+  functionalImpact: string;
+  substanceUse: string;
   complaint: string;
   currentHistory: string;
   healthHistory: string;
@@ -985,6 +990,11 @@ function AnamnesisForm({
       guardian: read('guardian'),
       interviewDate: read('interviewDate'),
       referredBy: read('referredBy'),
+      searchMotivation: read('searchMotivation'),
+      emotionalHistory: read('emotionalHistory'),
+      supportNetwork: read('supportNetwork'),
+      functionalImpact: read('functionalImpact'),
+      substanceUse: read('substanceUse'),
       complaint: read('complaint'),
       currentHistory: read('currentHistory'),
       healthHistory: read('healthHistory'),
@@ -1064,6 +1074,49 @@ function AnamnesisForm({
             </div>
           </div>
         </AnamnesisSection>
+        <section className="rounded-2xl border border-teal-100 bg-teal-50/40 p-5">
+          <div className="mb-5">
+            <h3 className="font-bold text-slate-800">
+              Perguntas orientadoras da entrevista
+            </h3>
+            <p className="mt-1 text-xs text-slate-500">
+              Registre a resposta do paciente com suas próprias palavras sempre
+              que possível.
+            </p>
+          </div>
+          <div className="space-y-5">
+            <GuidedQuestion
+              label="Motivo da busca"
+              question="O que motivou você a buscar acompanhamento psicológico agora?"
+              name="searchMotivation"
+              value={value?.searchMotivation}
+            />
+            <GuidedQuestion
+              label="Histórico emocional"
+              question="Já realizou algum tratamento psicológico ou psiquiátrico anteriormente? Com que resultado?"
+              name="emotionalHistory"
+              value={value?.emotionalHistory}
+            />
+            <GuidedQuestion
+              label="Relacionamentos e rede de suporte"
+              question="Como você descreveria suas relações familiares e de amizade?"
+              name="supportNetwork"
+              value={value?.supportNetwork}
+            />
+            <GuidedQuestion
+              label="Sintomas e impacto funcional"
+              question="Esses sentimentos ou pensamentos interferem no seu trabalho, sono ou vida social?"
+              name="functionalImpact"
+              value={value?.functionalImpact}
+            />
+            <GuidedQuestion
+              label="Uso de substâncias"
+              question="Usa álcool, medicamentos ou outras substâncias para lidar com o que está sentindo?"
+              name="substanceUse"
+              value={value?.substanceUse}
+            />
+          </div>
+        </section>
         <AnamnesisSection number="2" title="Queixa / demanda">
           <LongField
             name="complaint"
@@ -1217,6 +1270,33 @@ function LongField({
         rows={5}
         className="resize-y rounded-xl border border-slate-200 p-3 text-sm leading-relaxed outline-none focus:border-teal-500"
         placeholder="Registre as informações coletadas na entrevista..."
+      />
+    </label>
+  );
+}
+function GuidedQuestion({
+  label,
+  question,
+  name,
+  value,
+}: {
+  label: string;
+  question: string;
+  name: string;
+  value?: string;
+}) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-xs font-bold uppercase tracking-wide text-teal-700">
+        {label}
+      </span>
+      <span className="text-sm font-medium text-slate-700">“{question}”</span>
+      <textarea
+        name={name}
+        defaultValue={value}
+        rows={3}
+        className="resize-y rounded-xl border border-slate-200 bg-white p-3 text-sm leading-relaxed outline-none focus:border-teal-500"
+        placeholder="Registre a resposta..."
       />
     </label>
   );
