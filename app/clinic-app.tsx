@@ -743,30 +743,20 @@ function Dashboard({
             </button>
           </div>
           <div className="divide-y divide-slate-100">
-            <Appointment
-              time="09:30"
-              p={patients[0]}
-              tag="Finalizado"
-              select={select}
-            />
-            <Appointment
-              time="11:00"
-              p={patients[1]}
-              tag="Em 50 min"
-              select={select}
-            />
-            <Appointment
-              time="14:00"
-              p={patients[2]}
-              tag="Confirmado"
-              select={select}
-            />
-            <Appointment
-              time="16:30"
-              p={patients[3]}
-              tag="Confirmado"
-              select={select}
-            />
+            {patients.slice(0, 4).map((patient, index) => (
+              <Appointment
+                key={patient.id}
+                time={['09:30', '11:00', '14:00', '16:30'][index]}
+                p={patient}
+                tag={index === 0 ? 'Finalizado' : 'Confirmado'}
+                select={select}
+              />
+            ))}
+            {patients.length === 0 && (
+              <p className="p-8 text-center text-sm text-slate-400">
+                Nenhum paciente cadastrado. Use “Novo paciente” para começar.
+              </p>
+            )}
           </div>
         </section>
         <section className="panel">
