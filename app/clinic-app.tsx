@@ -1394,10 +1394,6 @@ function LoginScreen({
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
             Registro de Entrevista/Anamnese Psicológica Online
           </h1>
-          <p className="mt-5 max-w-md text-base leading-7 text-teal-50/65">
-            Anamnese, evolução e instrumentos de rastreio reunidos em um
-            ambiente claro para apoiar seu trabalho.
-          </p>
         </div>
         <p className="relative text-xs text-teal-100/45">
           Acesso protegido · Dados sincronizados com segurança
