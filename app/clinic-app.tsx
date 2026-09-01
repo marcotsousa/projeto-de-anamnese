@@ -1317,6 +1317,7 @@ function LoginScreen({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
+  const [registrationRole, setRegistrationRole] = useState<'psicologo' | 'administrativo'>('psicologo');
   const [selectedState, setSelectedState] = useState('');
   const [municipalities, setMunicipalities] = useState<string[]>([]);
   const [loadingMunicipalities, setLoadingMunicipalities] = useState(false);
@@ -1369,6 +1370,7 @@ function LoginScreen({
       return;
     }
     setRegistering(false);
+    setRegistrationRole('psicologo');
     setSelectedState('');
     form.reset();
     setError('Conta criada com sucesso. Use seu e-mail e senha para entrar.');
@@ -1428,7 +1430,16 @@ function LoginScreen({
               <input name="registration-password-trap" type="password" autoComplete="current-password" tabIndex={-1} />
             </div>
             <Field label="Nome completo" name="fullName" autoComplete="new-password" />
-            <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" autoComplete="new-password" />
+            <label className="grid gap-1.5 text-sm font-semibold">
+              Tipo de perfil
+              <select required name="role" value={registrationRole} onChange={(event) => setRegistrationRole(event.target.value as 'psicologo' | 'administrativo')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+                <option value="psicologo">Psicólogo</option>
+                <option value="administrativo">Administrativo</option>
+              </select>
+            </label>
+            {registrationRole === 'psicologo' && (
+              <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" autoComplete="new-password" />
+            )}
             <Field label="Endereço comercial" name="businessAddress" autoComplete="new-password" />
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-1.5 text-sm font-semibold">
@@ -1513,7 +1524,7 @@ function LoginScreen({
             </button>
             <p className="text-center text-sm text-slate-600">
               Ainda não possui acesso?{' '}
-              <button type="button" onClick={() => { setRegistering(true); setSelectedState(''); setError(''); }} className="font-semibold text-teal-700 hover:underline">
+              <button type="button" onClick={() => { setRegistering(true); setRegistrationRole('psicologo'); setSelectedState(''); setError(''); }} className="font-semibold text-teal-700 hover:underline">
                 Criar minha conta
               </button>
             </p>

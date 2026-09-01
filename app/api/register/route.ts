@@ -8,10 +8,12 @@ export async function POST(request: NextRequest) {
   if (!url || !serviceKey)
     return NextResponse.json({ error: 'Cadastro indisponível no momento.' }, { status: 503 });
 
-  const { fullName, email, password, jobTitle, council, businessAddress, state, municipality, whatsapp } = await request.json();
+  const { fullName, email, password, role = 'psicologo', jobTitle, council, businessAddress, state, municipality, whatsapp } = await request.json();
   if (!fullName?.trim() || !email?.trim() || !password)
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 });
-  if (!council?.trim())
+  if (!['psicologo', 'administrativo'].includes(role))
+    return NextResponse.json({ error: 'Tipo de perfil inválido.' }, { status: 400 });
+  if (role === 'psicologo' && !council?.trim())
     return NextResponse.json(
       { error: 'Informe o número do CRP para prosseguir com o cadastro.' },
       { status: 400 },
@@ -44,8 +46,8 @@ export async function POST(request: NextRequest) {
   const { error: profileError } = await admin.from('profiles').insert({
     user_id: data.user.id,
     full_name: fullName.trim(),
-    role: 'psicologo',
-    job_title: jobTitle?.trim() || 'Psicólogo(a)',
+    role,
+    job_title: jobTitle?.trim() || (role === 'psicologo' ? 'Psicólogo(a)' : 'Administrativo'),
     council: council?.trim() || '',
     business_address: businessAddress?.trim() || '',
     state: state.trim(),
