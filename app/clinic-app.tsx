@@ -17,6 +17,7 @@ import {
   LockKeyhole,
   LogOut,
   Menu,
+  NotebookPen,
   Plus,
   Search,
   ShieldCheck,
@@ -1380,7 +1381,7 @@ function LoginScreen({
         <div className="absolute -bottom-32 left-20 h-96 w-96 rounded-full bg-teal-300/5" />
         <div className="relative flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d9f0e8] text-[#19595a]">
-            <Brain size={25} />
+            <NotebookPen size={25} />
           </div>
           <div>
             <p className="font-bold">Projeto de Anamnese</p>
@@ -1403,7 +1404,7 @@ function LoginScreen({
         <div className="w-full max-w-md">
           <div className="mb-9 flex items-center gap-3 lg:hidden">
             <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#176a68] text-white">
-              <Brain size={22} />
+              <NotebookPen size={22} />
             </div>
             <div>
               <p className="font-bold text-slate-800">Projeto de Anamnese</p>
