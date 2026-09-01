@@ -1392,7 +1392,7 @@ function LoginScreen({
             <ShieldCheck size={27} />
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
-            Cuidado clínico começa com uma escuta organizada.
+            Registro de Entrevista/Anamnese Psicológica Online
           </h1>
           <p className="mt-5 max-w-md text-base leading-7 text-teal-50/65">
             Anamnese, evolução e instrumentos de rastreio reunidos em um
