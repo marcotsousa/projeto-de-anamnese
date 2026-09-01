@@ -4,7 +4,6 @@ import { supabase } from '@/lib/supabase';
 import {
   Activity,
   Bell,
-  Brain,
   CalendarDays,
   ChevronRight,
   ClipboardCheck,
@@ -536,7 +535,7 @@ export default function ClinicApp() {
       >
         <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
           <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#d9f0e8] text-[#19595a]">
-            <Brain size={23} />
+            <NotebookPen size={23} />
           </div>
           <div>
             <div className="text-sm font-bold leading-tight">
