@@ -26,6 +26,7 @@ export async function GET(request: NextRequest) {
   if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
   const professionalId = request.nextUrl.searchParams.get('professionalId');
   const date = request.nextUrl.searchParams.get('date');
+  const includeAll = request.nextUrl.searchParams.get('all') === 'true';
   let query = authorization.admin
     .from('appointments')
     .select('id, client_reference, client_name, professional_user_id, professional_name, professional_role, appointment_date, start_time, end_time, status')
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
     .order('start_time');
   if (professionalId) query = query.eq('professional_user_id', professionalId);
   if (date) query = query.eq('appointment_date', date);
-  else query = query.gte('appointment_date', new Date().toISOString().slice(0, 10));
+  else if (!includeAll) query = query.gte('appointment_date', new Date().toISOString().slice(0, 10));
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: 'Não foi possível carregar a agenda.' }, { status: 400 });
   return NextResponse.json((data ?? []).map((item) => ({
