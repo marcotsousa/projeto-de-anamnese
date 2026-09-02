@@ -1057,7 +1057,7 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
 }
 
 function UserManagement() {
-  const [users, setUsers] = useState<Array<{
+  type ManagedUser = {
     id: string;
     email: string;
     fullName: string;
@@ -1068,7 +1068,9 @@ function UserManagement() {
     municipality: string;
     whatsapp: string;
     blocked: boolean;
-  }>>([]);
+  };
+  const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [viewingUser, setViewingUser] = useState<ManagedUser | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [savingUserId, setSavingUserId] = useState('');
@@ -1231,6 +1233,13 @@ function UserManagement() {
                   <div className="flex gap-2 sm:flex-col">
                     <button
                       type="button"
+                      onClick={() => setViewingUser(user)}
+                      className="flex h-9 items-center justify-center gap-2 rounded-lg border border-sky-200 px-3 text-xs font-semibold text-sky-700"
+                    >
+                      <Eye size={15} /> Visualizar perfil
+                    </button>
+                    <button
+                      type="button"
                       disabled={savingUserId === user.id}
                       onClick={() => toggleBlock(user)}
                       className={`flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold disabled:opacity-50 ${user.blocked ? 'border-emerald-200 text-emerald-700' : 'border-amber-200 text-amber-700'}`}
@@ -1252,6 +1261,32 @@ function UserManagement() {
           )}
         </section>
       </div>
+      {viewingUser && (
+        <Modal
+          title="Perfil do usuário"
+          subtitle="Dados cadastrais e nível de acesso"
+          close={() => setViewingUser(null)}
+        >
+          <div className="grid gap-4 p-6 sm:grid-cols-2">
+            {[
+              ['Nome completo', viewingUser.fullName],
+              ['E-mail', viewingUser.email],
+              ['Perfil de acesso', roleLabel[viewingUser.role]],
+              ['Situação', viewingUser.blocked ? 'Bloqueado' : 'Ativo'],
+              ['Cargo', viewingUser.jobTitle],
+              ['Conselho Regional', viewingUser.council],
+              ['WhatsApp', viewingUser.whatsapp],
+              ['Município', viewingUser.municipality],
+              ['Endereço comercial', viewingUser.businessAddress],
+            ].map(([label, value]) => (
+              <div key={label} className={label === 'Endereço comercial' ? 'sm:col-span-2' : ''}>
+                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
+                <p className="mt-1 break-words text-sm font-medium text-slate-700">{value || 'Não informado'}</p>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
     </div>
   );
 }
@@ -2323,11 +2358,13 @@ function Info({ title, text }: { title: string; text: string }) {
 }
 function Modal({
   title,
+  subtitle = 'Os campos marcados são obrigatórios',
   close,
   children,
   wide = false,
 }: {
   title: string;
+  subtitle?: string;
   close: () => void;
   children: React.ReactNode;
   wide?: boolean;
@@ -2338,9 +2375,7 @@ function Modal({
         <div className="flex items-center justify-between border-b px-6 py-5">
           <div>
             <h2 className="text-xl font-bold">{title}</h2>
-            <p className="text-xs text-slate-400">
-              Os campos marcados são obrigatórios
-            </p>
+            <p className="text-xs text-slate-400">{subtitle}</p>
           </div>
           <button onClick={close}>
             <X />
