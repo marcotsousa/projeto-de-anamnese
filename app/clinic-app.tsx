@@ -2126,6 +2126,15 @@ function PatientForm({
 }) {
   const [clientState, setClientState] = useState('');
   const [clientMunicipalities, setClientMunicipalities] = useState<string[]>([]);
+  const [birthDate, setBirthDate] = useState('');
+  const today = new Date();
+  const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  const calculatedAge = birthDate ? (() => {
+    const [year, month, day] = birthDate.split('-').map(Number);
+    let age = today.getFullYear() - year;
+    if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age--;
+    return Math.max(0, age);
+  })() : '';
   useEffect(() => {
     if (!clientState) {
       setClientMunicipalities([]);
@@ -2146,7 +2155,10 @@ function PatientForm({
     <form onSubmit={submit} className="grid gap-4 p-6">
       <h3 className="text-sm font-bold uppercase tracking-wide text-teal-700">Identificação do cliente</h3>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Data" name="registrationDate" type="date" />
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Data
+          <input required name="registrationDate" type="date" defaultValue={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" />
+        </label>
         <Field label="Nome do solicitante" name="requesterName" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
@@ -2162,8 +2174,14 @@ function PatientForm({
         <Field label="Documento de identificação do usuário" name="document" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Data de nascimento" name="birth" type="date" />
-        <Field label="Idade" name="age" type="number" />
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Data de nascimento
+          <input required name="birth" type="date" max={todayValue} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" />
+        </label>
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Idade
+          <input required readOnly name="age" type="number" value={calculatedAge} placeholder="Calculada automaticamente" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" />
+        </label>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
