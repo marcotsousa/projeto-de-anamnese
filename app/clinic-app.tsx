@@ -2200,7 +2200,7 @@ function PatientForm({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
-          <Field label="Estado civil" name="maritalStatus" />
+          <SelectField label="Estado civil" name="maritalStatus" options={['Solteiro(a)', 'Casado(a)', 'União estável', 'Separado(a)', 'Divorciado(a)', 'Viúvo(a)', 'Outro', 'Não informado']} />
         </div>
       </FormSection>
 
