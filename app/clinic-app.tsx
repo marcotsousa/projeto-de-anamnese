@@ -63,6 +63,7 @@ type Patient = {
   assignedProfessionalRole?: string;
   appointmentDate?: string;
   appointmentTime?: string;
+  appointmentId?: string;
 };
 type ProfessionalOption = {
   id: string;
@@ -70,6 +71,18 @@ type ProfessionalOption = {
   role: 'psicologo' | 'assistente_social';
   availabilityStart: string;
   availabilityEnd: string;
+};
+type AppointmentRecord = {
+  id: string;
+  clientReference: string;
+  clientName: string;
+  professionalId: string;
+  professionalName: string;
+  professionalRole: 'psicologo' | 'assistente_social';
+  date: string;
+  startTime: string;
+  endTime: string;
+  status: string;
 };
 type Assessment = {
   id: number;
@@ -427,13 +440,34 @@ export default function ClinicApp() {
     reader.readAsText(file);
     event.target.value = '';
   }
-  function addPatient(e: React.FormEvent<HTMLFormElement>) {
+  async function addPatient(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const f = new FormData(e.currentTarget),
       name = String(f.get('name'));
+    const patientId = Date.now();
+    const { data: sessionData } = await supabase!.auth.getSession();
+    const appointmentResponse = await fetch('/api/appointments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({
+        clientReference: patientId,
+        clientName: name,
+        professionalId: String(f.get('assignedProfessionalId')),
+        date: String(f.get('appointmentDate')),
+        startTime: String(f.get('appointmentTime')),
+      }),
+    });
+    const appointmentResult = await appointmentResponse.json();
+    if (!appointmentResponse.ok) {
+      window.alert(appointmentResult.error || 'Não foi possível salvar o agendamento.');
+      return;
+    }
     setPatients((v) => [
       {
-        id: Date.now(),
+        id: patientId,
         name,
         initials: name
           .split(' ')
@@ -469,6 +503,7 @@ export default function ClinicApp() {
         assignedProfessionalRole: String(f.get('assignedProfessionalRole')),
         appointmentDate: String(f.get('appointmentDate')),
         appointmentTime: String(f.get('appointmentTime')),
+        appointmentId: appointmentResult.id,
       },
       ...v,
     ]);
@@ -979,9 +1014,17 @@ function Dashboard({
   );
 }
 function Schedule({ patients, select }: { patients: Patient[]; select: (patient: Patient) => void }) {
-  const scheduled = patients
-    .filter((patient) => patient.appointmentDate && patient.appointmentTime)
-    .sort((a, b) => `${a.appointmentDate}T${a.appointmentTime}`.localeCompare(`${b.appointmentDate}T${b.appointmentTime}`));
+  const [scheduled, setScheduled] = useState<AppointmentRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    let active = true;
+    supabase?.auth.getSession().then(async ({ data }) => {
+      const response = await fetch('/api/appointments', { headers: { Authorization: `Bearer ${data.session?.access_token}` } });
+      if (response.ok && active) setScheduled(await response.json());
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
   return (
     <div className="mx-auto max-w-6xl">
       <div className="mb-6">
@@ -989,19 +1032,22 @@ function Schedule({ patients, select }: { patients: Patient[]; select: (patient:
         <p className="mt-1 text-sm text-slate-500">Atendimentos agendados no cadastro dos Acolhidos.</p>
       </div>
       <section className="panel overflow-hidden">
-        {scheduled.length ? (
+        {loading ? <p className="p-10 text-center text-sm text-slate-400">Carregando agenda…</p> : scheduled.length ? (
           <div className="divide-y divide-slate-100">
-            {scheduled.map((patient) => (
-              <button key={patient.id} onClick={() => select(patient)} className="grid w-full gap-3 p-5 text-left hover:bg-slate-50 sm:grid-cols-[140px_1fr_1fr_auto] sm:items-center">
+            {scheduled.map((appointment) => {
+              const localPatient = patients.find((patient) => String(patient.id) === appointment.clientReference);
+              return (
+              <button key={appointment.id} onClick={() => localPatient && select(localPatient)} disabled={!localPatient} className="grid w-full gap-3 p-5 text-left hover:bg-slate-50 disabled:cursor-default sm:grid-cols-[140px_1fr_1fr_auto] sm:items-center">
                 <div>
-                  <p className="font-bold text-teal-700">{new Date(`${patient.appointmentDate}T12:00:00`).toLocaleDateString('pt-BR')}</p>
-                  <p className="text-sm text-slate-500">{patient.appointmentTime}</p>
+                  <p className="font-bold text-teal-700">{new Date(`${appointment.date}T12:00:00`).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-sm text-slate-500">{appointment.startTime}–{appointment.endTime}</p>
                 </div>
-                <div><p className="font-semibold">{patient.name}</p><p className="text-xs text-slate-500">Acolhido</p></div>
-                <div><p className="font-medium">{patient.assignedProfessionalName}</p><p className="text-xs text-slate-500">{patient.assignedProfessionalRole}</p></div>
-                <ChevronRight size={18} className="text-slate-300" />
+                <div><p className="font-semibold">{appointment.clientName}</p><p className="text-xs text-slate-500">Acolhido</p></div>
+                <div><p className="font-medium">{appointment.professionalName}</p><p className="text-xs text-slate-500">{appointment.professionalRole === 'psicologo' ? 'Psicólogo' : 'Assistente Social'}</p></div>
+                <span className="rounded-full bg-teal-50 px-3 py-1 text-center text-xs font-semibold capitalize text-teal-700">{appointment.status}</span>
               </button>
-            ))}
+              );
+            })}
           </div>
         ) : <p className="p-10 text-center text-sm text-slate-400">Nenhum atendimento agendado.</p>}
       </section>
@@ -2539,6 +2585,9 @@ function PatientForm({
   const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('');
   const [professionalsLoading, setProfessionalsLoading] = useState(true);
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [busyTimes, setBusyTimes] = useState<string[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
   const today = new Date();
   const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const calculatedAge = birthDate ? (() => {
@@ -2548,6 +2597,20 @@ function PatientForm({
     return Math.max(0, age);
   })() : '';
   const selectedProfessional = professionals.find((professional) => professional.id === selectedProfessionalId);
+  const availableTimes = (() => {
+    if (!selectedProfessional?.availabilityStart || !selectedProfessional.availabilityEnd) return [];
+    const toMinutes = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    const toTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    const slots: string[] = [];
+    for (let time = toMinutes(selectedProfessional.availabilityStart); time + 60 <= toMinutes(selectedProfessional.availabilityEnd); time += 30) {
+      const value = toTime(time);
+      if (!busyTimes.includes(value)) slots.push(value);
+    }
+    return slots;
+  })();
   useEffect(() => {
     let active = true;
     supabase?.auth.getSession().then(async ({ data }) => {
@@ -2562,6 +2625,34 @@ function PatientForm({
     });
     return () => { active = false; };
   }, []);
+  useEffect(() => {
+    if (!selectedProfessionalId || !appointmentDate) {
+      setBusyTimes([]);
+      return;
+    }
+    let active = true;
+    setSlotsLoading(true);
+    supabase?.auth.getSession().then(async ({ data }) => {
+      try {
+        const params = new URLSearchParams({ professionalId: selectedProfessionalId, date: appointmentDate });
+        const response = await fetch(`/api/appointments?${params}`, { headers: { Authorization: `Bearer ${data.session?.access_token}` } });
+        if (response.ok && active) {
+          const appointments: AppointmentRecord[] = await response.json();
+          setBusyTimes(appointments.flatMap((appointment) => {
+            const [hours, minutes] = appointment.startTime.split(':').map(Number);
+            const previous = hours * 60 + minutes - 30;
+            return [
+              appointment.startTime,
+              previous >= 0 ? `${String(Math.floor(previous / 60)).padStart(2, '0')}:${String(previous % 60).padStart(2, '0')}` : '',
+            ];
+          }).filter(Boolean));
+        }
+      } finally {
+        if (active) setSlotsLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, [selectedProfessionalId, appointmentDate]);
   useEffect(() => {
     if (!clientState) {
       setClientMunicipalities([]);
@@ -2652,9 +2743,18 @@ function PatientForm({
           </p>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="appointmentDate" type="date" min={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
-          <label className="grid gap-1.5 text-sm font-semibold">Horário do atendimento<input required name="appointmentTime" type="time" min={selectedProfessional?.availabilityStart || undefined} max={selectedProfessional?.availabilityEnd || undefined} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="appointmentDate" type="date" min={todayValue} value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-sm font-semibold">
+            Horário disponível
+            <select required name="appointmentTime" defaultValue="" key={`${selectedProfessionalId}-${appointmentDate}-${busyTimes.join(',')}`} disabled={!selectedProfessionalId || !appointmentDate || slotsLoading} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
+              <option value="">{slotsLoading ? 'Verificando horários…' : 'Selecione o horário'}</option>
+              {availableTimes.map((time) => <option key={time} value={time}>{time}–{(() => { const [h, m] = time.split(':').map(Number); const total = h * 60 + m + 60; return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`; })()}</option>)}
+            </select>
+          </label>
         </div>
+        {selectedProfessionalId && appointmentDate && !slotsLoading && availableTimes.length === 0 && (
+          <p className="text-sm font-medium text-amber-700">Não há horários livres para esta data. Escolha outro dia ou profissional.</p>
+        )}
         {!professionalsLoading && professionals.length === 0 && (
           <p className="text-sm font-medium text-amber-700">Nenhum profissional ativo está disponível para agendamento.</p>
         )}
