@@ -815,9 +815,6 @@ function Dashboard({
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Seja Bem-Vindo, {profileName}.
           </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Aqui está o panorama do seu consultório hoje.
-          </p>
         </div>
         <button
           onClick={open}
