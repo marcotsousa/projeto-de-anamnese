@@ -803,7 +803,7 @@ function Dashboard({
             {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Olá, {profileName}.
+            Seja Bem-Vindo, {profileName}.
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Aqui está o panorama do seu consultório hoje.
