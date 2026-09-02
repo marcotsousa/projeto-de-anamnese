@@ -214,6 +214,16 @@ const nav = [
   ['Relatórios', FileText],
 ] as const;
 
+const zonaDaMataMunicipalities = new Set([
+  'Paiva', 'Pedro Teixeira', 'Pequeri', 'Piau', 'Rio Novo', 'Rio Preto',
+  'Rochedo de Minas', 'Santa Bárbara do Monte Verde', 'Santa Rita do Ibitipoca',
+  'Santa Rita do Jacutinga', 'Santana do Deserto', 'Santos Dumont',
+  'São João Nepomuceno', 'Senador Cortes', 'Simão Pereira', 'Além Paraíba',
+  'Argirita', 'Cataguases', 'Dona Eusébia', "Estrela-d'Alva", 'Estrela Dalva',
+  'Itamarati de Minas', 'Laranjal', 'Leopoldina', 'Palma', 'Pirapetinga',
+  'Recreio', 'Santana de Cataguases', 'Santo Antônio do Aventureiro', 'Volta Grande',
+]);
+
 function usePersistentState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState(initialValue);
   const [hydrated, setHydrated] = useState(false);
@@ -1044,6 +1054,7 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
             ['Estado civil', p.maritalStatus],
             ['Estado (UF)', p.stateSpa],
             ['Município', p.municipality],
+            ['Macrorregião', p.region],
             ['Endereço residencial', p.residentialAddress],
             ['Origem do contato', p.contactOrigin],
             ['Fonte', p.source],
@@ -1294,6 +1305,7 @@ function PatientView({
                 ['Estado civil', p.maritalStatus],
                 ['Estado (UF)', p.stateSpa],
                 ['Município', p.municipality],
+                ['Macrorregião', p.region],
                 ['Endereço residencial', p.residentialAddress],
                 ['Origem do contato', p.contactOrigin],
                 ['Fonte', p.source],
@@ -2173,6 +2185,7 @@ function PatientForm({
   submit: (e: React.FormEvent<HTMLFormElement>) => void;
 }) {
   const [clientState, setClientState] = useState('');
+  const [clientMunicipality, setClientMunicipality] = useState('');
   const [clientMunicipalities, setClientMunicipalities] = useState<string[]>([]);
   const [birthDate, setBirthDate] = useState('');
   const today = new Date();
@@ -2186,6 +2199,7 @@ function PatientForm({
   useEffect(() => {
     if (!clientState) {
       setClientMunicipalities([]);
+      setClientMunicipality('');
       return;
     }
     let active = true;
@@ -2199,6 +2213,9 @@ function PatientForm({
       });
     return () => { active = false; };
   }, [clientState]);
+  const macroregion = clientState === 'MG' && zonaDaMataMunicipalities.has(clientMunicipality)
+    ? 'Zona da Mata'
+    : '';
   return (
     <form onSubmit={submit} className="grid gap-5 bg-slate-50/70 p-5 sm:p-6">
       <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
@@ -2235,9 +2252,13 @@ function PatientForm({
 
       <FormSection number="3" title="Endereço residencial" description="Selecione a UF para carregar os municípios correspondentes.">
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-semibold">Estado (UF)<select required name="stateSpa" value={clientState} onChange={(event) => setClientState(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500"><option value="">Selecione</option>{['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => <option key={uf} value={uf}>{uf}</option>)}</select></label>
-          <label className="grid gap-1.5 text-sm font-semibold">Município<select key={clientState} required name="municipality" disabled={!clientState} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400"><option value="">{clientState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>{clientMunicipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Estado (UF)<select required name="stateSpa" value={clientState} onChange={(event) => { setClientState(event.target.value); setClientMunicipality(''); }} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500"><option value="">Selecione</option>{['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => <option key={uf} value={uf}>{uf}</option>)}</select></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Município<select key={clientState} required name="municipality" disabled={!clientState} value={clientMunicipality} onChange={(event) => setClientMunicipality(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400"><option value="">{clientState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>{clientMunicipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>
         </div>
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Macrorregião
+          <input readOnly name="region" value={macroregion} placeholder="Preenchida conforme o município" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" />
+        </label>
         <Field label="Logradouro, número e complemento" name="residentialAddress" />
       </FormSection>
 
