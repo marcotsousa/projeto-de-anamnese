@@ -193,7 +193,7 @@ const initialSessions: Session[] = [
     patientId: 1,
     date: '31 de agosto de 2026',
     time: '09:30 – 10:20',
-    note: 'Paciente relata melhora gradual do sono após implementação da rotina combinada. Trabalhamos identificação de pensamentos automáticos relacionados ao ambiente profissional.',
+    note: 'Acolhido relata melhora gradual do sono após implementação da rotina combinada. Trabalhamos identificação de pensamentos automáticos relacionados ao ambiente profissional.',
     next: 'Manter diário de pensamentos e revisar estratégias de regulação emocional.',
   },
   {
@@ -207,7 +207,7 @@ const initialSessions: Session[] = [
 ];
 const nav = [
   ['Visão geral', LayoutDashboard],
-  ['Pacientes', Users],
+  ['Acolhidos', Users],
   ['Agenda', CalendarDays],
   ['Avaliações', ClipboardCheck],
   ['Relatórios', FileText],
@@ -309,7 +309,7 @@ export default function ClinicApp() {
           setAssessments([]);
           setSessions([]);
           setAnamneses({});
-          setActive('Pacientes');
+          setActive('Acolhidos');
           setCloudReady(true);
         });
       return;
@@ -480,7 +480,7 @@ export default function ClinicApp() {
       return next;
     });
     setSelected(null);
-    setActive('Pacientes');
+    setActive('Acolhidos');
   }
   function addSession(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -541,7 +541,7 @@ export default function ClinicApp() {
   }
   const visibleNav =
     role === 'administrativo'
-      ? ([['Pacientes', Users]] as const)
+      ? ([['Acolhidos', Users]] as const)
       : role === 'administrador'
         ? ([...nav, ['Usuários', UserCog]] as const)
         : nav;
@@ -589,14 +589,14 @@ export default function ClinicApp() {
               key={label}
               onClick={() => {
                 setActive(label);
-                if (label === 'Pacientes') setSelected(null);
+                if (label === 'Acolhidos') setSelected(null);
                 setMobile(false);
               }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${active === label ? 'bg-white/12 text-white' : 'text-teal-50/70 hover:bg-white/7'}`}
             >
               <Icon size={18} />
               {label}
-              {label === 'Pacientes' && (
+              {label === 'Acolhidos' && (
                 <span className="ml-auto rounded-full bg-white/10 px-2 text-xs">
                   {patients.length}
                 </span>
@@ -643,7 +643,7 @@ export default function ClinicApp() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-teal-500"
-              placeholder="Buscar pacientes, avaliações..."
+              placeholder="Buscar acolhidos, avaliações..."
             />
           </div>
           <div className="hidden items-center gap-2 lg:flex">
@@ -682,7 +682,7 @@ export default function ClinicApp() {
               className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
             >
               <Plus size={17} />
-              Novo paciente
+              Novo acolhido
             </button>
           )}
         </header>
@@ -711,7 +711,7 @@ export default function ClinicApp() {
             />
           ) : active === 'Usuários' && role === 'administrador' ? (
             <UserManagement />
-          ) : active === 'Pacientes' ? (
+          ) : active === 'Acolhidos' ? (
             <Patients
               patients={filtered}
               query={query}
@@ -724,7 +724,7 @@ export default function ClinicApp() {
             <Dashboard
               patients={patients}
               select={(p) => {
-                setActive('Pacientes');
+                setActive('Acolhidos');
                 setSelected(p);
               }}
               open={() => setModal('patient')}
@@ -736,7 +736,7 @@ export default function ClinicApp() {
         <Modal
           title={
             modal === 'patient'
-              ? 'Cadastrar paciente'
+              ? 'Cadastrar acolhido'
               : modal === 'session'
                 ? 'Nova atualização'
                 : 'Aplicar instrumento'
@@ -785,13 +785,13 @@ function Dashboard({
           className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:hidden"
         >
           <Plus size={17} />
-          Novo paciente
+          Novo acolhido
         </button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           icon={Users}
-          label="Pacientes ativos"
+          label="Acolhidos ativos"
           value="24"
           detail="+3 neste mês"
           color="teal"
@@ -841,7 +841,7 @@ function Dashboard({
             ))}
             {patients.length === 0 && (
               <p className="p-8 text-center text-sm text-slate-400">
-                Nenhum paciente cadastrado. Use “Novo paciente” para começar.
+                Nenhum acolhido cadastrado. Use “Novo acolhido” para começar.
               </p>
             )}
           </div>
@@ -869,7 +869,7 @@ function Dashboard({
             <Alert
               icon={FileText}
               title="Anamnese incompleta"
-              text="Lucas Ferreira · novo paciente"
+              text="Lucas Ferreira · novo acolhido"
               tone="blue"
             />
           </div>
@@ -878,7 +878,7 @@ function Dashboard({
       <section className="panel mt-6">
         <div className="panel-head">
           <div>
-            <h2>Pacientes recentes</h2>
+            <h2>Acolhidos recentes</h2>
             <p>Acesso rápido aos últimos prontuários</p>
           </div>
         </div>
@@ -886,7 +886,7 @@ function Dashboard({
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>
-                <th className="px-6 py-3">Paciente</th>
+                <th className="px-6 py-3">Acolhido</th>
                 <th className="px-6 py-3">Último atendimento</th>
                 <th className="px-6 py-3">Status</th>
                 <th />
@@ -939,7 +939,7 @@ function Patients({
     <div className="mx-auto max-w-7xl">
       <div className="mb-6 flex items-end justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Pacientes</h1>
+          <h1 className="text-3xl font-bold">Acolhidos</h1>
           <p className="mt-1 text-sm text-slate-500">
             Cadastros e prontuários sob sua responsabilidade.
           </p>
@@ -950,7 +950,7 @@ function Patients({
             className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"
           >
             <Plus size={17} />
-            Novo paciente
+            Novo acolhido
           </button>
         )}
       </div>
@@ -1198,7 +1198,7 @@ function PatientView({
         onClick={back}
         className="mb-4 text-sm font-medium text-slate-500"
       >
-        ← Voltar para pacientes
+        ← Voltar para acolhidos
       </button>
       <section className="panel overflow-hidden">
         <div className="h-24 bg-gradient-to-r from-[#164f52] to-[#2c7c78]" />
@@ -1664,7 +1664,7 @@ function AnamnesisForm({
           <p className="text-sm text-slate-500">
             {value?.updatedAt
               ? `Última atualização: ${new Date(value.updatedAt).toLocaleString('pt-BR')}`
-              : 'Preencha a entrevista inicial do paciente'}
+              : 'Preencha a entrevista inicial do acolhido'}
           </p>
         </div>
         <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">
@@ -1674,7 +1674,7 @@ function AnamnesisForm({
       <div className="space-y-8 p-6">
         <AnamnesisSection number="1" title="Identificação">
           <div className="grid gap-4 rounded-2xl bg-slate-50 p-4 sm:grid-cols-2">
-            <ReadOnly label="Paciente" value={patient.name} />
+            <ReadOnly label="Acolhido" value={patient.name} />
             <ReadOnly
               label="Nascimento / idade"
               value={`${patient.birth} — ${patient.age} anos`}
@@ -1726,7 +1726,7 @@ function AnamnesisForm({
               Perguntas orientadoras da entrevista
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              Registre a resposta do paciente com suas próprias palavras sempre
+              Registre a resposta do acolhido com suas próprias palavras sempre
               que possível.
             </p>
           </div>
@@ -1767,7 +1767,7 @@ function AnamnesisForm({
           <LongField
             name="complaint"
             value={value?.complaint}
-            prompt="Motivo da procura, preferencialmente nas palavras do próprio paciente ou do responsável."
+            prompt="Motivo da procura, preferencialmente nas palavras do próprio acolhido ou do responsável."
           />
         </AnamnesisSection>
         <AnamnesisSection number="3" title="História da queixa atual">
@@ -2213,7 +2213,7 @@ function PatientForm({
       </FormSection>
 
       <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end border-t bg-white/95 px-5 py-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
-        <Submit label="Cadastrar paciente" />
+        <Submit label="Cadastrar acolhido" />
       </div>
     </form>
   );

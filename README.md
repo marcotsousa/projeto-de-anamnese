@@ -2,11 +2,11 @@
 
 Aplicação responsiva para prontuários psicológicos, anamnese, evolução de sessões e rastreios clínicos. O acesso é protegido pela autenticação da plataforma e todas as consultas devem usar o identificador do profissional autenticado como filtro de propriedade.
 
-Na versão local, pacientes, sessões e avaliações são preservados no armazenamento privado do navegador. A interface também permite exportar e importar um backup JSON. Esses dados pertencem somente ao perfil de navegador e ao computador em uso.
+Na versão local, acolhidos, sessões e avaliações são preservados no armazenamento privado do navegador. A interface também permite exportar e importar um backup JSON. Esses dados pertencem somente ao perfil de navegador e ao computador em uso.
 
 ## Recursos
 
-- Dashboard clínico, busca e cadastro de pacientes.
+- Dashboard clínico, busca e cadastro de acolhidos.
 - Prontuário com anamnese, plano terapêutico e contatos.
 - Histórico de “Atualizações” com data, horário, evolução e próximos passos.
 - Histórico de ASSIST, PHQ-9, ASRS-v1.1, SNAP-IV, M-CHAT-R e AQ-10.
@@ -46,7 +46,7 @@ app/
   chatgpt-auth.ts       identidade e sessão
   globals.css           tema responsivo
 db/
-  schema.ts             profissionais, pacientes, anamneses, sessões e avaliações
+  schema.ts             profissionais, acolhidos, anamneses, sessões e avaliações
   index.ts              conexão D1/SQLite
 lib/
   scoring.ts            regras de pontuação e classificação
