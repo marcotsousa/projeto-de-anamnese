@@ -2514,11 +2514,11 @@ function PatientForm({
           <label className="grid gap-1.5 text-sm font-semibold">Estado (UF)<select required name="stateSpa" value={clientState} onChange={(event) => { setClientState(event.target.value); setClientMunicipality(''); }} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500"><option value="">Selecione</option>{['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => <option key={uf} value={uf}>{uf}</option>)}</select></label>
           <label className="grid gap-1.5 text-sm font-semibold">Município<select key={clientState} required name="municipality" disabled={!clientState} value={clientMunicipality} onChange={(event) => setClientMunicipality(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400"><option value="">{clientState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>{clientMunicipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>
         </div>
+        <Field label="Logradouro, número e complemento" name="residentialAddress" />
         <label className="grid gap-1.5 text-sm font-semibold">
           Macrorregião
           <input readOnly name="region" value={macroregion} placeholder="Preenchida conforme o município" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" />
         </label>
-        <Field label="Logradouro, número e complemento" name="residentialAddress" />
       </FormSection>
 
       <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end border-t bg-white/95 px-5 py-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
