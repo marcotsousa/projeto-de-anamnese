@@ -73,6 +73,7 @@ type Session = {
   time: string;
   note: string;
   next: string;
+  isoDate?: string;
 };
 type AnamnesisRecord = {
   patientId: number;
@@ -331,6 +332,11 @@ export default function ClinicApp() {
           if (state.assessments) setAssessments(state.assessments);
           if (state.sessions) setSessions(state.sessions);
           if (state.anamneses) setAnamneses(state.anamneses);
+        } else if (!error) {
+          setPatients([]);
+          setAssessments([]);
+          setSessions([]);
+          setAnamneses({});
         }
         setCloudReady(true);
       });
@@ -495,6 +501,7 @@ export default function ClinicApp() {
           { day: 'numeric', month: 'long', year: 'numeric' },
         ),
         time: String(f.get('time')),
+        isoDate: String(f.get('date')),
         note: String(f.get('note')),
         next: String(f.get('next')),
       },
@@ -723,6 +730,9 @@ export default function ClinicApp() {
           ) : (
             <Dashboard
               patients={patients}
+              sessions={sessions}
+              assessments={assessments}
+              profileName={profileName}
               select={(p) => {
                 setActive('Acolhidos');
                 setSelected(p);
@@ -759,22 +769,41 @@ export default function ClinicApp() {
 
 function Dashboard({
   patients,
+  sessions,
+  assessments,
+  profileName,
   select,
   open,
 }: {
   patients: Patient[];
+  sessions: Session[];
+  assessments: Assessment[];
+  profileName: string;
   select: (p: Patient) => void;
   open: () => void;
 }) {
+  const now = new Date();
+  const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const monthPrefix = todayIso.slice(0, 7);
+  const activePatients = patients.filter((patient) => patient.status !== 'Encerrado').length;
+  const sessionsToday = sessions.filter((session) => session.isoDate === todayIso).length;
+  const sessionsThisMonth = sessions.filter((session) => session.isoDate?.startsWith(monthPrefix)).length;
+  const pendingAssessments = assessments.filter((assessment) => assessment.level.toLowerCase().includes('pendente')).length;
+  const todayAppointments = sessions
+    .filter((session) => session.isoDate === todayIso)
+    .flatMap((session) => {
+      const patient = patients.find((item) => item.id === session.patientId);
+      return patient ? [{ session, patient }] : [];
+    });
   return (
     <div className="mx-auto max-w-7xl">
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-1 text-sm font-medium text-[#287472]">
-            Segunda-feira, 31 de agosto
+            {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Bom dia, Marco.
+            Olá, {profileName}.
           </h1>
           <p className="mt-1 text-sm text-slate-500">
             Aqui está o panorama do seu consultório hoje.
@@ -792,29 +821,29 @@ function Dashboard({
         <Metric
           icon={Users}
           label="Acolhidos ativos"
-          value="24"
-          detail="+3 neste mês"
+          value={String(activePatients)}
+          detail={`${patients.length} cadastrado(s)`}
           color="teal"
         />
         <Metric
           icon={CalendarDays}
           label="Sessões hoje"
-          value="6"
-          detail="Próxima às 11:00"
+          value={String(sessionsToday)}
+          detail={sessionsToday ? 'Conforme registros de hoje' : 'Nenhuma sessão registrada'}
           color="blue"
         />
         <Metric
           icon={ClipboardCheck}
           label="Avaliações pendentes"
-          value="4"
-          detail="2 vencem esta semana"
+          value={String(pendingAssessments)}
+          detail={`${assessments.length} avaliação(ões) registrada(s)`}
           color="amber"
         />
         <Metric
           icon={Activity}
           label="Sessões no mês"
-          value="38"
-          detail="12% acima de julho"
+          value={String(sessionsThisMonth)}
+          detail="Calculado pelos registros do mês"
           color="violet"
         />
       </div>
@@ -823,25 +852,25 @@ function Dashboard({
           <div className="panel-head">
             <div>
               <h2>Agenda de hoje</h2>
-              <p>6 atendimentos programados</p>
+              <p>{todayAppointments.length} atendimento(s) registrado(s)</p>
             </div>
             <button className="text-sm font-semibold text-[#176a68]">
               Ver agenda
             </button>
           </div>
           <div className="divide-y divide-slate-100">
-            {patients.slice(0, 4).map((patient, index) => (
+            {todayAppointments.map(({ patient, session }) => (
               <Appointment
-                key={patient.id}
-                time={['09:30', '11:00', '14:00', '16:30'][index]}
+                key={session.id}
+                time={session.time}
                 p={patient}
-                tag={index === 0 ? 'Finalizado' : 'Confirmado'}
+                tag="Registrado"
                 select={select}
               />
             ))}
-            {patients.length === 0 && (
+            {todayAppointments.length === 0 && (
               <p className="p-8 text-center text-sm text-slate-400">
-                Nenhum Acolhido cadastrado. Use “Novo Acolhido” para começar.
+                Nenhuma sessão registrada para hoje.
               </p>
             )}
           </div>
