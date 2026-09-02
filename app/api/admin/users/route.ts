@@ -19,12 +19,13 @@ async function authorize(request: NextRequest) {
     .select('role')
     .eq('user_id', data.user.id)
     .single();
-  return profile?.role === 'administrador' ? admin : null;
+  return profile?.role === 'administrador' ? { admin, requesterId: data.user.id } : null;
 }
 
 export async function GET(request: NextRequest) {
-  const admin = await authorize(request);
-  if (!admin) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const authorization = await authorize(request);
+  if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const { admin } = authorization;
   const [{ data: authData, error }, { data: profiles }] = await Promise.all([
     admin.auth.admin.listUsers(),
     admin
@@ -44,13 +45,15 @@ export async function GET(request: NextRequest) {
       businessAddress: byId.get(user.id)?.business_address ?? '',
       municipality: byId.get(user.id)?.municipality ?? '',
       whatsapp: byId.get(user.id)?.whatsapp ?? '',
+      blocked: Boolean(user.banned_until && new Date(user.banned_until) > new Date()),
     })),
   );
 }
 
 export async function POST(request: NextRequest) {
-  const admin = await authorize(request);
-  if (!admin) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const authorization = await authorize(request);
+  if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const { admin } = authorization;
   const {
     fullName,
     email,
@@ -87,9 +90,17 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PATCH(request: NextRequest) {
-  const admin = await authorize(request);
-  if (!admin) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
-  const { userId, role } = await request.json();
+  const authorization = await authorize(request);
+  if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const { admin } = authorization;
+  const { userId, role, action } = await request.json();
+  if (userId && ['block', 'unblock'].includes(action)) {
+    const { error } = await admin.auth.admin.updateUserById(userId, {
+      ban_duration: action === 'block' ? '876000h' : 'none',
+    });
+    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+    return NextResponse.json({ ok: true });
+  }
   if (!userId || !['administrador', 'psicologo', 'administrativo'].includes(role))
     return NextResponse.json({ error: 'Usuário ou perfil inválido.' }, { status: 400 });
 
@@ -116,6 +127,26 @@ export async function PATCH(request: NextRequest) {
     .from('profiles')
     .update({ role })
     .eq('user_id', userId);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(request: NextRequest) {
+  const authorization = await authorize(request);
+  if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const { admin, requesterId } = authorization;
+  const { userId } = await request.json();
+  if (!userId) return NextResponse.json({ error: 'Usuário inválido.' }, { status: 400 });
+  if (userId === requesterId)
+    return NextResponse.json({ error: 'Você não pode excluir a própria conta.' }, { status: 400 });
+
+  const { data: profile } = await admin.from('profiles').select('role').eq('user_id', userId).single();
+  if (profile?.role === 'administrador') {
+    const { count } = await admin.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'administrador');
+    if ((count ?? 0) <= 1)
+      return NextResponse.json({ error: 'O último Administrador não pode ser excluído.' }, { status: 400 });
+  }
+  const { error } = await admin.auth.admin.deleteUser(userId);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ ok: true });
 }

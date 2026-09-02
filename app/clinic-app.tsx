@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import {
   Activity,
+  Ban,
   Bell,
   CalendarDays,
   ChevronRight,
@@ -24,6 +25,7 @@ import {
   Trash2,
   Upload,
   UserCog,
+  UserX,
   Users,
   X,
 } from 'lucide-react';
@@ -1081,6 +1083,7 @@ function UserManagement() {
     businessAddress: string;
     municipality: string;
     whatsapp: string;
+    blocked: boolean;
   }>>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
@@ -1136,6 +1139,41 @@ function UserManagement() {
     setUsers((current) => current.map((user) => user.id === userId ? { ...user, role } : user));
     setSavingUserId('');
     setMessage('Função atualizada com sucesso.');
+  }
+  async function toggleBlock(user: { id: string; fullName: string; email: string; blocked: boolean }) {
+    const actionLabel = user.blocked ? 'desbloquear' : 'bloquear';
+    if (!window.confirm(`Deseja ${actionLabel} o acesso de ${user.fullName || user.email}?`)) return;
+    setSavingUserId(user.id);
+    setMessage(`${user.blocked ? 'Desbloqueando' : 'Bloqueando'} usuário…`);
+    const response = await request('/api/admin/users', {
+      method: 'PATCH',
+      body: JSON.stringify({ userId: user.id, action: user.blocked ? 'unblock' : 'block' }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setSavingUserId('');
+      return setMessage(result.error || 'Não foi possível alterar o acesso.');
+    }
+    setUsers((current) => current.map((item) => item.id === user.id ? { ...item, blocked: !item.blocked } : item));
+    setSavingUserId('');
+    setMessage(`Usuário ${user.blocked ? 'desbloqueado' : 'bloqueado'} com sucesso.`);
+  }
+  async function deleteUser(user: { id: string; fullName: string; email: string }) {
+    if (!window.confirm(`Excluir permanentemente a conta de ${user.fullName || user.email}?\n\nEsta ação não pode ser desfeita.`)) return;
+    setSavingUserId(user.id);
+    setMessage('Excluindo usuário…');
+    const response = await request('/api/admin/users', {
+      method: 'DELETE',
+      body: JSON.stringify({ userId: user.id }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      setSavingUserId('');
+      return setMessage(result.error || 'Não foi possível excluir o usuário.');
+    }
+    setUsers((current) => current.filter((item) => item.id !== user.id));
+    setSavingUserId('');
+    setMessage('Usuário excluído com sucesso.');
   }
   const roleLabel = { administrador: 'Administrador', psicologo: 'Psicólogo', administrativo: 'Administrativo' };
   return (
@@ -1196,6 +1234,24 @@ function UserManagement() {
                       <option value="administrativo">Administrativo</option>
                     </select>
                   </label>
+                  <div className="flex gap-2 sm:flex-col">
+                    <button
+                      type="button"
+                      disabled={savingUserId === user.id}
+                      onClick={() => toggleBlock(user)}
+                      className={`flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold disabled:opacity-50 ${user.blocked ? 'border-emerald-200 text-emerald-700' : 'border-amber-200 text-amber-700'}`}
+                    >
+                      <Ban size={15} /> {user.blocked ? 'Desbloquear' : 'Bloquear'}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingUserId === user.id}
+                      onClick={() => deleteUser(user)}
+                      className="flex h-9 items-center justify-center gap-2 rounded-lg border border-rose-200 px-3 text-xs font-semibold text-rose-700 disabled:opacity-50"
+                    >
+                      <UserX size={15} /> Excluir
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
