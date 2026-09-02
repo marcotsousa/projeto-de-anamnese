@@ -161,26 +161,6 @@ const initialPatients: Patient[] = [
 ];
 const initialAssessments: Assessment[] = [
   {
-    id: 1,
-    patientId: 1,
-    type: 'PHQ-9',
-    date: '26 ago 2026',
-    score: '14 / 27',
-    level: 'Moderada',
-    note: 'Reavaliar em quatro semanas.',
-    tone: 'amber',
-  },
-  {
-    id: 2,
-    patientId: 1,
-    type: 'ASRS-v1.1',
-    date: '12 ago 2026',
-    score: '5 / 6',
-    level: 'Rastreio positivo',
-    note: 'Investigar história escolar e funcional.',
-    tone: 'violet',
-  },
-  {
     id: 3,
     patientId: 1,
     type: 'ASSIST',
@@ -715,7 +695,7 @@ export default function ClinicApp() {
               tab={tab}
               setTab={setTab}
               assessments={assessments.filter(
-                (a) => a.patientId === selected.id,
+                (a) => a.patientId === selected.id && a.type === 'ASSIST',
               )}
               sessions={sessions.filter((s) => s.patientId === selected.id)}
               anamnesis={anamneses[String(selected.id)]}
@@ -744,7 +724,7 @@ export default function ClinicApp() {
             <Dashboard
               patients={patients}
               sessions={sessions}
-              assessments={assessments}
+              assessments={assessments.filter((assessment) => assessment.type === 'ASSIST')}
               profileName={profileName}
               select={(p) => {
                 setActive('Acolhidos');
@@ -893,12 +873,6 @@ function Dashboard({
             </div>
           </div>
           <div className="space-y-3 p-5">
-            <Alert
-              icon={ClipboardCheck}
-              title="PHQ-9 para reaplicar"
-              text="Rafael Mendes · há 4 semanas"
-              tone="amber"
-            />
             <Alert
               icon={HeartPulse}
               title="Risco moderado no ASSIST"
@@ -1444,7 +1418,7 @@ function PatientView({
         <section className="panel mt-6">
           <div className="panel-head">
             <div>
-              <h2>Instrumentos e escalas</h2>
+              <h2>Instrumento ASSIST</h2>
               <p>Histórico de avaliações e rastreios</p>
             </div>
             <button
@@ -2513,12 +2487,7 @@ function AssessmentForm({
       <label className="grid gap-1.5 text-sm font-semibold">
         Instrumento
         <select name="type" className="h-11 rounded-xl border px-3 font-normal">
-          <option>PHQ-9</option>
           <option>ASSIST</option>
-          <option>ASRS-v1.1</option>
-          <option>M-CHAT-R</option>
-          <option>AQ-10</option>
-          <option>SNAP-IV</option>
         </select>
       </label>
       <div className="rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
