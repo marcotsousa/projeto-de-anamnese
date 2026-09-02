@@ -67,7 +67,10 @@ type Assessment = {
   level: string;
   note: string;
   tone: string;
+  assistResults?: AssistResult[];
+  injectionUse?: string;
 };
+type AssistResult = { substance: string; score: number; classification: string; recommendation: string };
 type Session = {
   id: number;
   patientId: number;
@@ -509,15 +512,17 @@ export default function ClinicApp() {
     const f = new FormData(e.currentTarget),
       type = String(f.get('type')),
       score = Number(f.get('score'));
+    const rawAssistResults = String(f.get('assistResults') ?? '');
+    const assistResults: AssistResult[] = rawAssistResults ? JSON.parse(rawAssistResults) : [];
     let level = 'Baixo / mínimo',
       tone = 'emerald';
-    if (score >= 10) {
-      level = 'Moderado';
-      tone = 'amber';
-    }
-    if (score >= 20) {
-      level = 'Alto / grave';
-      tone = 'rose';
+    if (assistResults.length) {
+      const highest = Math.max(...assistResults.map((result) => result.score));
+      level = highest >= 16 ? 'Sugestivo de dependência' : highest >= 4 ? 'Sugestivo de abuso' : 'Uso ocasional';
+      tone = highest >= 16 ? 'rose' : highest >= 4 ? 'amber' : 'emerald';
+    } else {
+      if (score >= 10) { level = 'Moderado'; tone = 'amber'; }
+      if (score >= 20) { level = 'Alto / grave'; tone = 'rose'; }
     }
     setAssessments((v) => [
       {
@@ -529,10 +534,12 @@ export default function ClinicApp() {
           month: 'short',
           year: 'numeric',
         }),
-        score: String(score),
+        score: assistResults.length ? assistResults.map((result) => `${result.substance}: ${result.score}`).join(' · ') : String(score),
         level,
         note: String(f.get('note')),
         tone,
+        assistResults,
+        injectionUse: String(f.get('injectionUse') ?? ''),
       },
       ...v,
     ]);
@@ -745,7 +752,7 @@ export default function ClinicApp() {
                 : 'Aplicar instrumento'
           }
           close={close}
-          wide={modal === 'patient'}
+          wide={modal === 'patient' || modal === 'assessment'}
         >
           {modal === 'patient' ? (
             <PatientForm submit={addPatient} />
@@ -1436,15 +1443,12 @@ function PatientView({
                   <span className="text-xs text-slate-400">{a.date}</span>
                 </div>
                 <h3 className="mt-4 font-bold">{a.type}</h3>
-                <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3">
-                  <b>{a.score}</b>
-                  <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">
-                    {a.level}
-                  </span>
-                </div>
+                {a.assistResults?.length ? <div className="mt-3 space-y-2">{a.assistResults.filter((result) => result.score > 0).map((result) => <div key={result.substance} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-2"><b className="text-sm">{result.substance}</b><span className="text-xs font-bold">{result.score}/20</span></div><p className="mt-1 text-xs font-semibold text-teal-700">{result.classification}</p><p className="mt-1 text-xs text-slate-500">{result.recommendation}</p></div>)}</div> : <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3"><b>{a.score}</b><span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">{a.level}</span></div>}
+                {a.injectionUse && <p className="mt-3 rounded-lg border border-slate-100 p-2 text-xs text-slate-500"><b>Uso injetável:</b> {a.injectionUse}</p>}
                 <p className="mt-3 text-sm text-slate-500">{a.note}</p>
               </div>
             ))}
+            {assessments.length === 0 && <p className="col-span-full py-8 text-center text-sm text-slate-400">Nenhum ASSIST aplicado.</p>}
           </div>
         </section>
       )}
@@ -2482,24 +2486,69 @@ function AssessmentForm({
 }: {
   submit: (e: React.FormEvent<HTMLFormElement>) => void;
 }) {
+  const substances = ['Tabaco', 'Álcool', 'Maconha', 'Cocaína / crack', 'Anfetaminas / ecstasy', 'Inalantes', 'Hipnóticos / sedativos', 'Alucinógenos', 'Opioides', 'Outras'];
+  const questions = [
+    { id: 2, text: 'Nos últimos três meses, com que frequência utilizou?', options: [['Nunca', 0], ['1 ou 2 vezes', 1], ['Mensalmente', 2], ['Semanalmente', 3], ['Diariamente ou quase todo dia', 4]] as const },
+    { id: 3, text: 'Com que frequência teve forte desejo ou urgência em consumir?', options: [['Nunca', 0], ['1 ou 2 vezes', 1], ['Mensalmente', 2], ['Semanalmente', 3], ['Diariamente ou quase todo dia', 4]] as const },
+    { id: 4, text: 'Com que frequência o consumo causou problema de saúde, social, legal ou financeiro?', options: [['Nunca', 0], ['1 ou 2 vezes', 1], ['Mensalmente', 2], ['Semanalmente', 3], ['Diariamente ou quase todo dia', 4]] as const },
+    { id: 5, text: 'Com que frequência deixou de fazer coisas normalmente esperadas?', options: [['Nunca', 0], ['1 ou 2 vezes', 1], ['Mensalmente', 2], ['Semanalmente', 3], ['Diariamente ou quase todo dia', 4]] as const },
+    { id: 6, text: 'Alguém demonstrou preocupação com esse uso?', options: [['Não, nunca', 0], ['Sim, mas não nos últimos 3 meses', 1], ['Sim, nos últimos 3 meses', 2]] as const },
+    { id: 7, text: 'Já tentou controlar, diminuir ou parar o uso?', options: [['Não, nunca', 0], ['Sim, mas não nos últimos 3 meses', 1], ['Sim, nos últimos 3 meses', 2]] as const },
+  ];
+  const [usedEver, setUsedEver] = useState<Record<string, boolean>>({});
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const results: AssistResult[] = substances.map((substance) => {
+    const score = usedEver[substance] ? questions.reduce((sum, question) => sum + (answers[`${substance}__${question.id}`] ?? 0), 0) : 0;
+    if (score >= 16) return { substance, score, classification: 'Sugestivo de dependência', recommendation: 'Realizar avaliação clínica aprofundada e considerar encaminhamento para cuidado especializado.' };
+    if (score >= 4) return { substance, score, classification: 'Sugestivo de abuso', recommendation: 'Realizar intervenção breve e acompanhamento clínico.' };
+    return { substance, score, classification: 'Uso ocasional', recommendation: 'Oferecer orientação preventiva e acompanhar conforme o contexto clínico.' };
+  });
+  const selectedResults = results.filter((result) => usedEver[result.substance]);
   return (
-    <form onSubmit={submit} className="grid gap-4 p-6">
-      <label className="grid gap-1.5 text-sm font-semibold">
-        Instrumento
-        <select name="type" className="h-11 rounded-xl border px-3 font-normal">
-          <option>ASSIST</option>
-        </select>
-      </label>
-      <div className="rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
-        <Sparkles size={18} />
-        <b>Cálculo automático</b>
-        <p className="text-xs">
-          O sistema classifica a faixa e salva o resultado no histórico.
-        </p>
+    <form onSubmit={(event) => { if (!selectedResults.length) { event.preventDefault(); window.alert('Selecione pelo menos uma substância utilizada.'); return; } submit(event); }} className="grid gap-5 bg-slate-50/60 p-5 sm:p-6">
+      <input type="hidden" name="type" value="ASSIST" />
+      <input type="hidden" name="score" value={selectedResults.length ? Math.max(...selectedResults.map((result) => result.score)) : 0} />
+      <input type="hidden" name="assistResults" value={JSON.stringify(selectedResults)} />
+      <div className="rounded-2xl border border-teal-100 bg-teal-50 p-5 text-sm text-teal-900">
+        <div className="flex gap-3"><Sparkles className="shrink-0" size={20} /><div><b>ASSIST 2.0 - cálculo automático por substância</b><p className="mt-1 text-xs leading-5">Instrumento de triagem. O resultado deve ser interpretado junto à entrevista clínica e não estabelece diagnóstico isoladamente.</p></div></div>
       </div>
-      <Field label="Escore total" name="score" type="number" />
+      <section className="rounded-2xl border bg-white p-5">
+        <h3 className="font-bold">1. Uso na vida</h3>
+        <p className="mt-1 text-xs text-slate-500">Marque as substâncias utilizadas alguma vez, somente em uso não médico.</p>
+        <div className="mt-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          {substances.map((substance) => <label key={substance} className="flex items-center gap-2 rounded-xl border p-3 text-sm"><input type="checkbox" checked={Boolean(usedEver[substance])} onChange={(event) => setUsedEver((current) => ({ ...current, [substance]: event.target.checked }))} className="h-4 w-4 accent-teal-700" />{substance}</label>)}
+        </div>
+        {usedEver.Outras && <div className="mt-4"><Field label="Especifique outras substâncias" name="otherSubstance" /></div>}
+      </section>
+      {questions.map((question) => (
+        <section key={question.id} className="rounded-2xl border bg-white p-5">
+          <h3 className="text-sm font-bold"><span className="mr-2 text-teal-700">{question.id}.</span>{question.text}</h3>
+          <div className="mt-4 grid gap-3 lg:grid-cols-2">
+            {substances.filter((substance) => usedEver[substance]).map((substance) => (
+              <label key={substance} className="grid gap-1.5 text-xs font-semibold text-slate-600">{substance}
+                <select value={answers[`${substance}__${question.id}`] ?? 0} onChange={(event) => setAnswers((current) => ({ ...current, [`${substance}__${question.id}`]: Number(event.target.value) }))} className="h-10 rounded-xl border bg-white px-3 text-sm font-normal text-slate-700">
+                  {question.options.map(([label, value]) => <option key={label} value={value}>{label} ({value})</option>)}
+                </select>
+              </label>
+            ))}
+            {!Object.values(usedEver).some(Boolean) && <p className="text-sm text-slate-400">Marque pelo menos uma substância na questão 1.</p>}
+          </div>
+        </section>
+      ))}
+      <section className="rounded-2xl border bg-white p-5">
+        <label className="grid gap-2 text-sm font-bold">8. Alguma vez usou drogas por injeção? (uso não médico)
+          <select required name="injectionUse" defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal"><option value="">Selecione</option><option>Não, nunca</option><option>Sim, mas não nos últimos 3 meses</option><option>Sim, nos últimos 3 meses</option></select>
+        </label>
+      </section>
+      <section className="rounded-2xl border bg-white p-5">
+        <h3 className="font-bold">Interpretação automática</h3>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          {selectedResults.map((result) => <div key={result.substance} className={`rounded-xl border p-4 ${result.score >= 16 ? 'border-rose-200 bg-rose-50' : result.score >= 4 ? 'border-amber-200 bg-amber-50' : 'border-emerald-200 bg-emerald-50'}`}><div className="flex items-center justify-between gap-2"><b>{result.substance}</b><span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold">{result.score}/20</span></div><p className="mt-2 text-sm font-semibold">{result.classification}</p><p className="mt-1 text-xs leading-5 text-slate-600">{result.recommendation}</p></div>)}
+          {!Object.values(usedEver).some(Boolean) && <p className="text-sm text-slate-400">Os resultados aparecerão após selecionar as substâncias utilizadas.</p>}
+        </div>
+      </section>
       <Text label="Observações do psicólogo" name="note" />
-      <Submit label="Salvar avaliação" />
+      <Submit label="Salvar ASSIST" />
     </form>
   );
 }
