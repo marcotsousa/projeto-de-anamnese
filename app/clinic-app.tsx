@@ -327,46 +327,50 @@ export default function ClinicApp() {
 
   useEffect(() => {
     if (!supabase || !userId || !role) return;
+    const cloud = supabase;
     setCloudReady(false);
-    if (role === 'administrativo') {
-      supabase
-        .from('client_registry')
-        .select('data')
-        .then(({ data }) => {
-          setPatients((data ?? []).map((row) => row.data as Patient));
+    let activeRequest = true;
+    const loadCloudData = async () => {
+      const { data: sessionData } = await cloud.auth.getSession();
+      const response = await fetch('/api/clients', {
+        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+      });
+      if (response.ok && activeRequest) setPatients(await response.json());
+      if (role === 'administrativo') {
+        if (activeRequest) {
           setAssessments([]);
           setSessions([]);
           setAnamneses({});
           setActive('Acolhidos');
           setCloudReady(true);
-        });
-      return;
-    }
-    supabase
-      .from('user_state')
-      .select('data')
-      .eq('user_id', userId)
-      .maybeSingle()
-      .then(({ data, error }) => {
+        }
+        return;
+      }
+      const { data, error } = await cloud
+        .from('user_state')
+        .select('data')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (activeRequest) {
         if (!error && data?.data) {
           const state = data.data as {
-            patients?: Patient[];
             assessments?: Assessment[];
             sessions?: Session[];
             anamneses?: Record<string, AnamnesisRecord>;
           };
-          if (state.patients) setPatients(state.patients);
           if (state.assessments) setAssessments(state.assessments);
           if (state.sessions) setSessions(state.sessions);
           if (state.anamneses) setAnamneses(state.anamneses);
         } else if (!error) {
-          setPatients([]);
           setAssessments([]);
           setSessions([]);
           setAnamneses({});
         }
         setCloudReady(true);
-      });
+      }
+    };
+    loadCloudData();
+    return () => { activeRequest = false; };
   }, [userId, role]);
 
   useEffect(() => {
@@ -375,19 +379,12 @@ export default function ClinicApp() {
     const timer = window.setTimeout(() => {
       cloud.from('user_state').upsert({
         user_id: userId,
-        data: { patients, assessments, sessions, anamneses },
+        data: { assessments, sessions, anamneses },
         updated_at: new Date().toISOString(),
       });
-      const registryRows = patients.map((patient) => ({
-        professional_id: userId,
-        patient_id: patient.id,
-        data: patient,
-        updated_at: new Date().toISOString(),
-      }));
-      if (registryRows.length) cloud.from('client_registry').upsert(registryRows);
     }, 700);
     return () => window.clearTimeout(timer);
-  }, [userId, role, cloudReady, patients, assessments, sessions, anamneses]);
+  }, [userId, role, cloudReady, assessments, sessions, anamneses]);
   const filtered = patients.filter((p) =>
     p.name.toLowerCase().includes(query.toLowerCase()),
   );
@@ -447,17 +444,48 @@ export default function ClinicApp() {
     const f = new FormData(e.currentTarget),
       name = String(f.get('name'));
     const patientId = Date.now();
+    const patient: Patient = {
+      id: patientId,
+      name,
+      initials: name.split(' ').map((x) => x[0]).slice(0, 2).join('').toUpperCase(),
+      age: Number(f.get('age')),
+      phone: String(f.get('phone')),
+      email: String(f.get('email')),
+      document: String(f.get('document')),
+      birth: String(f.get('birth')),
+      last: 'Ainda não atendido',
+      status: String(f.get('status') ?? 'Novo cadastro'),
+      color: 'bg-teal-100 text-teal-700',
+      registrationDate: String(f.get('registrationDate')),
+      requesterName: String(f.get('requesterName')),
+      requesterRelationship: String(f.get('requesterRelationship')),
+      contactOrigin: String(f.get('contactOrigin') ?? ''),
+      source: String(f.get('source') ?? ''),
+      smoking: String(f.get('smoking') ?? ''),
+      genderSpa: String(f.get('genderSpa')),
+      maritalStatus: String(f.get('maritalStatus')),
+      municipality: String(f.get('municipality')),
+      region: String(f.get('region') ?? ''),
+      serviceType: String(f.get('serviceType') ?? ''),
+      residentialAddress: String(f.get('residentialAddress')),
+      requesterEmail: String(f.get('requesterEmail')),
+      stateSpa: String(f.get('stateSpa')),
+      spaPhone: String(f.get('spaPhone')),
+      assignedProfessionalId: String(f.get('assignedProfessionalId')),
+      assignedProfessionalName: String(f.get('assignedProfessionalName')),
+      assignedProfessionalRole: String(f.get('assignedProfessionalRole')),
+      appointmentDate: String(f.get('appointmentDate')),
+      appointmentTime: String(f.get('appointmentTime')),
+    };
     const { data: sessionData } = await supabase!.auth.getSession();
-    const appointmentResponse = await fetch('/api/appointments', {
+    const appointmentResponse = await fetch('/api/clients', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${sessionData.session?.access_token}`,
       },
       body: JSON.stringify({
-        clientReference: patientId,
-        clientName: name,
-        clientPhone: String(f.get('spaPhone')),
+        client: patient,
         professionalId: String(f.get('assignedProfessionalId')),
         date: String(f.get('appointmentDate')),
         startTime: String(f.get('appointmentTime')),
@@ -468,48 +496,7 @@ export default function ClinicApp() {
       window.alert(appointmentResult.error || 'Não foi possível salvar o agendamento.');
       return;
     }
-    setPatients((v) => [
-      {
-        id: patientId,
-        name,
-        initials: name
-          .split(' ')
-          .map((x) => x[0])
-          .slice(0, 2)
-          .join('')
-          .toUpperCase(),
-        age: Number(f.get('age')),
-        phone: String(f.get('phone')),
-        email: String(f.get('email')),
-        document: String(f.get('document')),
-        birth: String(f.get('birth')),
-        last: 'Ainda não atendido',
-        status: String(f.get('status') ?? 'Novo cadastro'),
-        color: 'bg-teal-100 text-teal-700',
-        registrationDate: String(f.get('registrationDate')),
-        requesterName: String(f.get('requesterName')),
-        requesterRelationship: String(f.get('requesterRelationship')),
-        contactOrigin: String(f.get('contactOrigin') ?? ''),
-        source: String(f.get('source') ?? ''),
-        smoking: String(f.get('smoking') ?? ''),
-        genderSpa: String(f.get('genderSpa')),
-        maritalStatus: String(f.get('maritalStatus')),
-        municipality: String(f.get('municipality')),
-        region: String(f.get('region') ?? ''),
-        serviceType: String(f.get('serviceType') ?? ''),
-        residentialAddress: String(f.get('residentialAddress')),
-        requesterEmail: String(f.get('requesterEmail')),
-        stateSpa: String(f.get('stateSpa')),
-        spaPhone: String(f.get('spaPhone')),
-        assignedProfessionalId: String(f.get('assignedProfessionalId')),
-        assignedProfessionalName: String(f.get('assignedProfessionalName')),
-        assignedProfessionalRole: String(f.get('assignedProfessionalRole')),
-        appointmentDate: String(f.get('appointmentDate')),
-        appointmentTime: String(f.get('appointmentTime')),
-        appointmentId: appointmentResult.id,
-      },
-      ...v,
-    ]);
+    setPatients((v) => [{ ...patient, appointmentId: appointmentResult.appointmentId }, ...v]);
     close();
   }
   async function login(email: string, password: string) {
@@ -523,11 +510,21 @@ export default function ClinicApp() {
     setUserId(null);
     setAuthenticated(false);
   }
-  function deletePatient(patient: Patient) {
+  async function deletePatient(patient: Patient) {
     const confirmed = window.confirm(
       `Apagar permanentemente o registro de ${patient.name}?\n\nA anamnese, as sessões e as avaliações vinculadas também serão excluídas. Esta ação não pode ser desfeita.`,
     );
     if (!confirmed) return;
+    const { data: sessionData } = await supabase!.auth.getSession();
+    const response = await fetch(`/api/clients?id=${encodeURIComponent(String(patient.id))}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+    });
+    if (!response.ok) {
+      const result = await response.json();
+      window.alert(result.error || 'Não foi possível apagar o Acolhido.');
+      return;
+    }
     setPatients((current) => current.filter((item) => item.id !== patient.id));
     setSessions((current) =>
       current.filter((item) => item.patientId !== patient.id),
