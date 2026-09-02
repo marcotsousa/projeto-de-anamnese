@@ -79,28 +79,29 @@ type Session = {
 };
 type AnamnesisRecord = {
   patientId: number;
-  gender: string;
-  maritalOccupation: string;
-  education: string;
-  birthplaceResidence: string;
-  guardian: string;
-  interviewDate: string;
-  referredBy: string;
-  searchMotivation: string;
-  emotionalHistory: string;
-  supportNetwork: string;
-  functionalImpact: string;
-  substanceUse: string;
-  complaint: string;
-  currentHistory: string;
-  healthHistory: string;
-  familyHistory: string;
-  developmentRoutine: string;
-  initialImpressions: string;
-  city: string;
-  signedAt: string;
-  professionalName: string;
-  crp: string;
+  gender?: string;
+  maritalOccupation?: string;
+  education?: string;
+  birthplaceResidence?: string;
+  guardian?: string;
+  interviewDate?: string;
+  referredBy?: string;
+  searchMotivation?: string;
+  emotionalHistory?: string;
+  supportNetwork?: string;
+  functionalImpact?: string;
+  substanceUse?: string;
+  complaint?: string;
+  currentHistory?: string;
+  healthHistory?: string;
+  familyHistory?: string;
+  developmentRoutine?: string;
+  initialImpressions?: string;
+  city?: string;
+  signedAt?: string;
+  professionalName?: string;
+  crp?: string;
+  psychosocialAnswers?: Record<string, string>;
   updatedAt: string;
 };
 type UserRole = 'administrador' | 'psicologo' | 'administrativo';
@@ -1400,7 +1401,7 @@ function PatientView({
         </div>
       )}
       {tab === 'Anamnese' && (
-        <AnamnesisForm patient={p} value={anamnesis} onSave={saveAnamnesis} />
+        <PsychosocialAnamnesisForm patient={p} value={anamnesis} onSave={saveAnamnesis} />
       )}
       {tab === 'Evolução' && (
         <section className="panel mt-6">
@@ -1704,6 +1705,160 @@ function LoginScreen({
         </div>
       </section>
     </main>
+  );
+}
+
+type PsychQuestion = {
+  id: number;
+  label: string;
+  type?: 'text' | 'textarea' | 'date' | 'select' | 'multi' | 'matrix';
+  options?: string[];
+  rows?: string[];
+  columns?: string[];
+};
+
+const psychosocialSections: Array<{ title: string; description: string; questions: PsychQuestion[] }> = [
+  {
+    title: 'Identificação', description: 'Dados pessoais, documentação, referência e demanda inicial.', questions: [
+      { id: 1, label: 'Nome do Acolhido' },
+      { id: 2, label: 'Sexo', type: 'select', options: ['Masculino', 'Feminino', 'Masculino Trans', 'Feminino Trans'] },
+      { id: 3, label: 'Contato telefônico (número)' },
+      { id: 4, label: 'Data de nascimento', type: 'date' },
+      { id: 5, label: 'Estado civil', type: 'select', options: ['Solteiro(a)', 'Casado(a)', 'União estável', 'Viúvo(a)', 'Separado(a)', 'Divorciado(a)'] },
+      { id: 6, label: 'Situação de documentação básica', type: 'multi', options: ['RG', 'CPF', 'CTPS', 'Certidão de nascimento', 'Certificado de reservista'] },
+      { id: 7, label: 'Pessoa de referência (nome e relação com o entrevistado)' },
+      { id: 8, label: 'Cor autodeclarada', type: 'select', options: ['Branco(a)', 'Preto(a)', 'Pardo(a)', 'Amarelo(a)', 'Indígena', 'Não informado'] },
+      { id: 9, label: 'Município de nascimento' },
+      { id: 10, label: 'Endereço residencial' },
+      { id: 11, label: 'Município residencial' },
+      { id: 12, label: 'Queixas', type: 'textarea' },
+    ],
+  },
+  {
+    title: 'Uso de substâncias psicoativas', description: 'Padrão de uso, impactos, gastos e motivação para interrupção.', questions: [
+      { id: 13, label: 'Substância psicoativa mais utilizada', type: 'select', options: ['Álcool', 'Anfetamina', 'Cocaína', 'Êxtase (MDMA)', 'Haxixe', 'Heroína', 'Lança-perfume', 'Crack', 'LSD', 'Cetamina', 'Maconha', 'Outra'] },
+      { id: 14, label: 'Tipo de SPA', type: 'select', options: ['Lícita', 'Ilícita', 'Ambas'] },
+      { id: 15, label: 'Uso de SPA', type: 'matrix', rows: ['Cafeína', 'Álcool', 'Cigarro', 'Maconha', 'Cocaína', 'Crack', 'Alucinógenos', 'Anfetaminas', 'Opioides (heroína, morfina)', 'Cetamina', 'Maconha sintética'], columns: ['Frequentemente', 'Às vezes', 'Raramente', 'Nunca'] },
+      { id: 16, label: 'Valor gasto mensalmente com consumo de SPA', type: 'select', options: ['Menos que R$ 500,00', 'Entre R$ 500,00 e R$ 1.400,00', 'Acima de R$ 1.400,00', 'Não sabe'] },
+      { id: 17, label: 'Idade de início do uso de SPA', type: 'select', options: ['7 a 11 anos', '12 a 16 anos', '17 a 21 anos', 'Após 22 anos'] },
+      { id: 18, label: 'Impacto do uso de SPA em sua vida', type: 'textarea' },
+      { id: 19, label: 'Relação familiar após o início do uso de substâncias', type: 'textarea' },
+      { id: 20, label: 'Situações envolvidas no uso', type: 'multi', options: ['Relacionamentos', 'Perda ou luto', 'Doença crônica', 'Relações sociais'] },
+      { id: 31, label: 'Tem vontade de interromper o uso?', type: 'select', options: ['Sim', 'Não', 'Talvez', 'Não sabe'] },
+      { id: 32, label: 'Uso de SPA por familiares', type: 'select', options: ['Sim', 'Não'] },
+    ],
+  },
+  {
+    title: 'Tratamentos e internações', description: 'Histórico psicológico, psiquiátrico, medicamentoso e institucional.', questions: [
+      { id: 21, label: 'Histórico de tratamento psicológico', type: 'select', options: ['Sim', 'Não'] },
+      { id: 22, label: 'Histórico de tratamento psiquiátrico', type: 'select', options: ['Sim', 'Não'] },
+      { id: 23, label: 'Psicofarmacoterapia (medicações separadas por vírgula)' },
+      { id: 24, label: 'Outras intervenções terapêuticas', type: 'multi', options: ['Comunidade terapêutica', 'Grupo de mútua ajuda', 'Outra'] },
+      { id: 25, label: 'Histórico de internação pelo uso de SPA', type: 'select', options: ['Sim', 'Não'] },
+      { id: 26, label: 'Internação por uso de SPA: ano, local e período', type: 'textarea' },
+      { id: 27, label: 'Histórico de internação por sofrimento mental', type: 'select', options: ['Sim', 'Não'] },
+      { id: 28, label: 'Internação por sofrimento mental: ano, local e período', type: 'textarea' },
+      { id: 29, label: 'Histórico de acolhimento em comunidade terapêutica', type: 'select', options: ['Sim', 'Não'] },
+      { id: 30, label: 'Acolhimento em comunidade terapêutica: ano, local e período', type: 'textarea' },
+    ],
+  },
+  {
+    title: 'Saúde e desenvolvimento', description: 'Condições clínicas, sono, alimentação, gestação e antecedentes.', questions: [
+      { id: 33, label: 'Histórico de doenças crônicas', type: 'multi', options: ['Diabetes', 'Hipotireoidismo', 'Hipertireoidismo', 'Hipertensão', 'Doença autoimune', 'Dores crônicas', 'Outra', 'Nenhuma'] },
+      { id: 34, label: 'Histórico de saúde mental na família', type: 'textarea' },
+      { id: 35, label: 'Histórico de traumatismo cranioencefálico', type: 'textarea' },
+      { id: 36, label: 'Sono', type: 'select', options: ['Regular', 'Insônia inicial', 'Insônia de manutenção', 'Insônia terminal'] },
+      { id: 37, label: 'Apetite / alimentação', type: 'select', options: ['Regular', 'Falta de apetite', 'Excesso de apetite', 'Compulsão alimentar'] },
+      { id: 38, label: 'Atividade física', type: 'select', options: ['Sedentário(a)', '1 vez por semana', '2 vezes por semana', '3 vezes por semana', 'Mais de 3 vezes por semana'] },
+      { id: 39, label: 'Histórico de cirurgia', type: 'textarea' },
+      { id: 40, label: 'Histórico de saúde familiar', type: 'textarea' },
+      { id: 41, label: 'Gestação', type: 'multi', options: ['Normal', 'Uso de substância', 'Trauma', 'Infecções', 'Não sabe', 'Não se aplica'] },
+      { id: 42, label: 'Parto', type: 'select', options: ['Normal', 'Cesariana', 'Prematuridade', 'Pré-eclâmpsia', 'Eclâmpsia', 'Fórceps', 'Parto forçado', 'Não sabe', 'Não se aplica'] },
+      { id: 43, label: 'Última consulta médica' },
+    ],
+  },
+  {
+    title: 'Trabalho, renda e contexto social', description: 'Ocupação, benefícios, relações, apoio, escolaridade e projetos.', questions: [
+      { id: 44, label: 'Exerce atividade remunerada?', type: 'select', options: ['Sim', 'Não'] },
+      { id: 45, label: 'Se não trabalha, tem vontade de retornar ao trabalho?', type: 'select', options: ['Sim', 'Não', 'Já trabalha'] },
+      { id: 46, label: 'Experiências profissionais / habilitações' },
+      { id: 47, label: 'Áreas de interesse de trabalho' },
+      { id: 48, label: 'Tem registro no CadÚnico?', type: 'select', options: ['Sim', 'Não', 'Não sabe / não deseja informar'] },
+      { id: 49, label: 'Recebe benefícios estatais?', type: 'select', options: ['Sim', 'Não'] },
+      { id: 50, label: 'Se sim, informe qual', type: 'multi', options: ['Bolsa Família', 'BPC / LOAS', 'Outros'] },
+      { id: 51, label: 'Renda mensal', type: 'select', options: ['Menos que um salário mínimo', 'Mais que um salário mínimo', 'Sem informação'] },
+      { id: 52, label: 'Estrutura e dinâmica familiar', type: 'textarea' },
+      { id: 53, label: 'Qualidade das relações familiares', type: 'textarea' },
+      { id: 54, label: 'Histórico social (amizades)', type: 'textarea' },
+      { id: 55, label: 'Rede de apoio', type: 'multi', options: ['Núcleo familiar', 'Amigos', 'Referência espiritual', 'CAPS / CERSAM AD', 'UBS', 'Profissional de saúde mental', 'Grupo de mútua ajuda', 'Não possui'] },
+      { id: 56, label: 'Liste pessoas ou instituições da rede de apoio', type: 'textarea' },
+      { id: 57, label: 'Filhos', type: 'select', options: ['0', '1', '2', '3', '4', '5 ou mais'] },
+      { id: 58, label: 'Relacionamentos amorosos', type: 'textarea' },
+      { id: 59, label: 'Conflito com a lei', type: 'select', options: ['Sim', 'Não'] },
+      { id: 60, label: 'Passagem pelo sistema prisional', type: 'select', options: ['Sim', 'Não'] },
+      { id: 61, label: 'Escolaridade', type: 'select', options: ['Fundamental incompleto', 'Fundamental completo', 'Médio incompleto', 'Médio completo', 'Superior / Pós-graduação / Mestrado / Doutorado'] },
+      { id: 62, label: 'Curso de interesse' },
+    ],
+  },
+  {
+    title: 'Avaliação de risco e estado mental', description: 'TAE, cognição, humor, riscos, sensopercepção e impressão do entrevistador.', questions: [
+      { id: 63, label: 'Avaliação de risco de TAE', type: 'matrix', rows: ['Pensamentos frequentes', 'Ideação suicida', 'Planejamento'], columns: ['Sim', 'Não', 'No passado'] },
+      { id: 64, label: 'Tentativas de TAE', type: 'select', options: ['Sim', 'Não'] },
+      { id: 65, label: 'Data da última tentativa de TAE ou informação disponível' },
+      { id: 66, label: 'Meios letais', type: 'multi', options: ['Intoxicação', 'Enforcamento', 'Queda', 'Perfurocortante', 'Outro'] },
+      { id: 67, label: 'Meios de autolesão', type: 'textarea' },
+      { id: 68, label: 'Cognição', type: 'matrix', rows: ['Memória', 'Linguagem', 'Psicomotricidade', 'Juízo crítico'], columns: ['Preservado', 'Alterado'] },
+      { id: 69, label: 'Humor', type: 'select', options: ['Eutimia', 'Hipotimia', 'Hipertimia'] },
+      { id: 70, label: 'Avaliação de riscos', type: 'matrix', rows: ['Overdose', 'Comportamento violento', 'Segurança no ambiente domiciliar'], columns: ['Baixo', 'Médio', 'Alto'] },
+      { id: 71, label: 'Sensopercepção', type: 'select', options: ['Preservada', 'Alucinação auditiva', 'Alucinação visual'] },
+      { id: 72, label: 'Compreensão do entrevistador sobre a pessoa', type: 'textarea' },
+    ],
+  },
+];
+
+function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patient; value?: AnamnesisRecord; onSave: (record: AnamnesisRecord) => void }) {
+  const [saved, setSaved] = useState(false);
+  const answers = value?.psychosocialAnswers ?? {};
+  const defaults: Record<string, string> = { q1: patient.name, q2: patient.genderSpa ?? '', q3: patient.spaPhone ?? '', q4: patient.birth, q5: patient.maritalStatus ?? '', q10: patient.residentialAddress ?? '', q11: patient.municipality ?? '' };
+  const answer = (key: string) => answers[key] ?? defaults[key] ?? '';
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    const psychosocialAnswers: Record<string, string> = {};
+    for (const [key, raw] of data.entries()) {
+      const text = String(raw);
+      psychosocialAnswers[key] = psychosocialAnswers[key] ? `${psychosocialAnswers[key]}, ${text}` : text;
+    }
+    onSave({ ...(value ?? {}), patientId: patient.id, psychosocialAnswers, updatedAt: new Date().toISOString() });
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 2500);
+  }
+  return (
+    <form onSubmit={submit} className="panel mt-6 overflow-hidden">
+      <div className="sticky top-20 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-white/95 px-6 py-5 backdrop-blur">
+        <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">72 questões organizadas em 6 blocos clínicos</p></div>
+        <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">{saved ? 'Salvo com sucesso' : 'Salvar anamnese'}</button>
+      </div>
+      <div className="space-y-6 bg-slate-50/60 p-5 sm:p-6">
+        {psychosocialSections.map((section, sectionIndex) => (
+          <section key={section.title} className="rounded-2xl border border-slate-200 bg-white p-5 sm:p-6">
+            <div className="mb-6 flex gap-3 border-b pb-4"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-teal-50 font-bold text-teal-700">{sectionIndex + 1}</span><div><h3 className="font-bold text-slate-800">{section.title}</h3><p className="mt-1 text-xs text-slate-500">{section.description}</p></div></div>
+            <div className="grid gap-6">
+              {section.questions.map((question) => {
+                const key = `q${question.id}`;
+                return <div key={key} className="grid gap-2"><label className="text-sm font-semibold text-slate-700"><span className="mr-2 text-xs font-bold text-teal-700">{question.id}.</span>{question.label}</label>
+                  {question.type === 'textarea' ? <textarea name={key} defaultValue={answer(key)} rows={3} className="rounded-xl border bg-white p-3 text-sm outline-none focus:border-teal-500" />
+                  : question.type === 'select' ? <select name={key} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500"><option value="">Selecione</option>{question.options?.map((option) => <option key={option}>{option}</option>)}</select>
+                  : question.type === 'multi' ? <div className="grid gap-2 rounded-xl border bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3">{question.options?.map((option) => <label key={option} className="flex items-center gap-2 text-sm font-normal"><input type="checkbox" name={key} value={option} defaultChecked={answer(key).split(', ').includes(option)} className="h-4 w-4 accent-teal-700" />{option}</label>)}</div>
+                  : question.type === 'matrix' ? <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[540px] text-sm"><thead className="bg-slate-50"><tr><th className="px-3 py-3 text-left">Item</th>{question.columns?.map((column) => <th key={column} className="px-3 py-3 text-center">{column}</th>)}</tr></thead><tbody>{question.rows?.map((row) => <tr key={row} className="border-t"><td className="px-3 py-3 font-medium">{row}</td>{question.columns?.map((column) => <td key={column} className="px-3 py-3 text-center"><input required type="radio" name={`${key}__${row}`} value={column} defaultChecked={answer(`${key}__${row}`) === column} className="h-4 w-4 accent-teal-700" /></td>)}</tr>)}</tbody></table></div>
+                  : <input name={key} type={question.type === 'date' ? 'date' : 'text'} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500" />}
+                </div>;
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
+    </form>
   );
 }
 
