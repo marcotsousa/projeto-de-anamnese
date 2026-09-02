@@ -1068,6 +1068,8 @@ function UserManagement() {
     role: UserRole;
     jobTitle: string;
     council: string;
+    availabilityStart: string;
+    availabilityEnd: string;
     businessAddress: string;
     municipality: string;
     whatsapp: string;
@@ -1075,6 +1077,7 @@ function UserManagement() {
   };
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [viewingUser, setViewingUser] = useState<ManagedUser | null>(null);
+  const [newUserRole, setNewUserRole] = useState<UserRole>('psicologo');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [savingUserId, setSavingUserId] = useState('');
@@ -1111,6 +1114,7 @@ function UserManagement() {
     const result = await response.json();
     if (!response.ok) return setMessage(result.error || 'Falha ao criar usuário.');
     form.reset();
+    setNewUserRole('psicologo');
     setMessage('Usuário criado com sucesso.');
     await load();
   }
@@ -1188,6 +1192,12 @@ function UserManagement() {
             </label>
             <Field label="Número do Conselho" name="council" placeholder="Digite o número e a região" />
           </div>
+          {['psicologo', 'assistente_social'].includes(newUserRole) && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Horário inicial" name="availabilityStart" type="time" />
+              <Field label="Horário final" name="availabilityEnd" type="time" />
+            </div>
+          )}
           <Field label="Endereço comercial" name="businessAddress" />
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Município" name="municipality" />
@@ -1197,7 +1207,7 @@ function UserManagement() {
           <Field label="Senha provisória" name="password" type="password" />
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Perfil
-            <select name="role" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="psicologo">
+            <select name="role" value={newUserRole} onChange={(event) => setNewUserRole(event.target.value as UserRole)} className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal">
               <option value="administrador">Administrador — acesso total</option>
               <option value="psicologo">Psicólogo — prontuários e instrumentos</option>
               <option value="assistente_social">Assistente Social — prontuários e instrumentos</option>
@@ -1279,6 +1289,7 @@ function UserManagement() {
               ['Situação', viewingUser.blocked ? 'Bloqueado' : 'Ativo'],
               ['Cargo', viewingUser.jobTitle],
               ['Conselho Regional', viewingUser.council],
+              ['Disponibilidade', viewingUser.availabilityStart && viewingUser.availabilityEnd ? `${viewingUser.availabilityStart} às ${viewingUser.availabilityEnd}` : ''],
               ['WhatsApp', viewingUser.whatsapp],
               ['Município', viewingUser.municipality],
               ['Endereço comercial', viewingUser.businessAddress],
@@ -1637,16 +1648,22 @@ function LoginScreen({
               </select>
             </label>
             {registrationRole !== 'administrativo' && (
-              <div className="grid gap-4 sm:grid-cols-2">
-                <label className="grid gap-1.5 text-sm font-semibold">
-                  Conselho Regional
-                  <select required name="councilType" defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
-                    <option value="">Selecione</option>
-                    <option value="CRP">CRP — Psicologia</option>
-                    <option value="CRESS">CRESS — Serviço Social</option>
-                  </select>
-                </label>
-                <Field label="Número do Conselho" name="council" placeholder="Número e região" autoComplete="new-password" />
+              <div className="grid gap-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <label className="grid gap-1.5 text-sm font-semibold">
+                    Conselho Regional
+                    <select required name="councilType" defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+                      <option value="">Selecione</option>
+                      <option value="CRP">CRP — Psicologia</option>
+                      <option value="CRESS">CRESS — Serviço Social</option>
+                    </select>
+                  </label>
+                  <Field label="Número do Conselho" name="council" placeholder="Número e região" autoComplete="new-password" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <Field label="Horário inicial" name="availabilityStart" type="time" />
+                  <Field label="Horário final" name="availabilityEnd" type="time" />
+                </div>
               </div>
             )}
             <Field label="Endereço comercial" name="businessAddress" autoComplete="new-password" />

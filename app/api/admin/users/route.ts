@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     admin.auth.admin.listUsers(),
     admin
       .from('profiles')
-      .select('user_id, full_name, role, job_title, council, business_address, municipality, whatsapp'),
+      .select('user_id, full_name, role, job_title, council, availability_start, availability_end, business_address, municipality, whatsapp'),
   ]);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   const byId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
@@ -42,6 +42,8 @@ export async function GET(request: NextRequest) {
       role: byId.get(user.id)?.role ?? 'psicologo',
       jobTitle: byId.get(user.id)?.job_title ?? '',
       council: byId.get(user.id)?.council ?? '',
+      availabilityStart: byId.get(user.id)?.availability_start ?? '',
+      availabilityEnd: byId.get(user.id)?.availability_end ?? '',
       businessAddress: byId.get(user.id)?.business_address ?? '',
       municipality: byId.get(user.id)?.municipality ?? '',
       whatsapp: byId.get(user.id)?.whatsapp ?? '',
@@ -62,6 +64,8 @@ export async function POST(request: NextRequest) {
     jobTitle,
     councilType,
     council,
+    availabilityStart,
+    availabilityEnd,
     businessAddress,
     municipality,
     whatsapp,
@@ -72,6 +76,12 @@ export async function POST(request: NextRequest) {
       (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
     return NextResponse.json(
       { error: 'Selecione o Conselho Regional e informe o respectivo número.' },
+      { status: 400 },
+    );
+  if (['psicologo', 'assistente_social'].includes(role) &&
+      (!availabilityStart || !availabilityEnd || availabilityEnd <= availabilityStart))
+    return NextResponse.json(
+      { error: 'Informe um horário final posterior ao horário inicial.' },
       { status: 400 },
     );
   const { data, error } = await admin.auth.admin.createUser({
@@ -87,6 +97,8 @@ export async function POST(request: NextRequest) {
     role,
     job_title: jobTitle,
     council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS)\s*/i, '')}` : '',
+    availability_start: availabilityStart || '',
+    availability_end: availabilityEnd || '',
     business_address: businessAddress,
     municipality,
     whatsapp,
