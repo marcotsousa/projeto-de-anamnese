@@ -2074,7 +2074,14 @@ function Modal({
       <div className={`max-h-[92vh] w-full overflow-y-auto rounded-3xl bg-white shadow-2xl ${wide ? 'max-w-4xl' : 'max-w-xl'}`}>
         <div className="flex items-center justify-between border-b px-6 py-5">
           <div>
-            <h2 className="text-xl font-bold">{title}</h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-xl font-bold">{title}</h2>
+              {wide && (
+                <span className="rounded-lg bg-teal-50 px-3 py-1.5 text-xs font-semibold text-teal-700">
+                  Data: {new Date().toLocaleDateString('pt-BR')}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-400">
               Os campos marcados são obrigatórios
             </p>
@@ -2169,10 +2176,8 @@ function PatientForm({
   return (
     <form onSubmit={submit} className="grid gap-5 bg-slate-50/70 p-5 sm:p-6">
       <FormSection number="1" title="Dados do solicitante" description="Identifique quem realizou o contato inicial.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-semibold">Data<input required name="registrationDate" type="date" defaultValue={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
-          <Field label="Nome do solicitante" name="requesterName" />
-        </div>
+        <input type="hidden" name="registrationDate" value={todayValue} />
+        <Field label="Nome do solicitante" name="requesterName" />
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Vínculo do solicitante" name="requesterRelationship" />
           <Field label="Telefone do solicitante" name="phone" type="tel" />
