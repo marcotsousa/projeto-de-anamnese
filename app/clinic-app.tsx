@@ -1170,9 +1170,17 @@ function UserManagement() {
         <form onSubmit={create} autoComplete="off" className="panel space-y-4 p-6">
           <h2 className="text-lg font-bold">Novo usuário</h2>
           <Field label="Nome completo" name="fullName" />
+          <Field label="Cargo" name="jobTitle" />
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Cargo" name="jobTitle" />
-            <Field label="Número do Conselho" name="council" placeholder="Ex.: CRP 00/00000" />
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Conselho Regional
+              <select required name="councilType" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="">
+                <option value="">Selecione</option>
+                <option value="CRP">CRP — Psicologia</option>
+                <option value="CRESS">CRESS — Serviço Social</option>
+              </select>
+            </label>
+            <Field label="Número do Conselho" name="council" placeholder="Digite o número e a região" />
           </div>
           <Field label="Endereço comercial" name="businessAddress" />
           <div className="grid gap-4 sm:grid-cols-2">
@@ -1589,11 +1597,18 @@ function LoginScreen({
                 <option value="administrativo">Administrativo</option>
               </select>
             </label>
-            {registrationRole === 'psicologo' && (
-              <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" autoComplete="new-password" />
-            )}
-            {registrationRole === 'assistente_social' && (
-              <Field label="Número do Conselho (CRESS)" name="council" placeholder="Ex.: CRESS 00000 / Região" autoComplete="new-password" />
+            {registrationRole !== 'administrativo' && (
+              <div className="grid gap-4 sm:grid-cols-2">
+                <label className="grid gap-1.5 text-sm font-semibold">
+                  Conselho Regional
+                  <select required name="councilType" defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+                    <option value="">Selecione</option>
+                    <option value="CRP">CRP — Psicologia</option>
+                    <option value="CRESS">CRESS — Serviço Social</option>
+                  </select>
+                </label>
+                <Field label="Número do Conselho" name="council" placeholder="Número e região" autoComplete="new-password" />
+              </div>
             )}
             <Field label="Endereço comercial" name="businessAddress" autoComplete="new-password" />
             <div className="grid gap-4 sm:grid-cols-2">

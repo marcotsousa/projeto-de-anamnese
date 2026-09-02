@@ -60,6 +60,7 @@ export async function POST(request: NextRequest) {
     password,
     role,
     jobTitle,
+    councilType,
     council,
     businessAddress,
     municipality,
@@ -67,6 +68,12 @@ export async function POST(request: NextRequest) {
   } = await request.json();
   if (!['administrador', 'psicologo', 'assistente_social', 'administrativo'].includes(role))
     return NextResponse.json({ error: 'Perfil inválido.' }, { status: 400 });
+  if (['psicologo', 'assistente_social'].includes(role) &&
+      (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
+    return NextResponse.json(
+      { error: 'Selecione o Conselho Regional e informe o respectivo número.' },
+      { status: 400 },
+    );
   const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
@@ -79,7 +86,7 @@ export async function POST(request: NextRequest) {
     full_name: fullName,
     role,
     job_title: jobTitle,
-    council,
+    council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS)\s*/i, '')}` : '',
     business_address: businessAddress,
     municipality,
     whatsapp,

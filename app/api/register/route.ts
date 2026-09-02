@@ -8,19 +8,15 @@ export async function POST(request: NextRequest) {
   if (!url || !serviceKey)
     return NextResponse.json({ error: 'Cadastro indisponível no momento.' }, { status: 503 });
 
-  const { fullName, email, password, role = 'psicologo', jobTitle, council, businessAddress, state, municipality, whatsapp } = await request.json();
+  const { fullName, email, password, role = 'psicologo', jobTitle, councilType, council, businessAddress, state, municipality, whatsapp } = await request.json();
   if (!fullName?.trim() || !email?.trim() || !password)
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 });
   if (!['psicologo', 'assistente_social', 'administrativo'].includes(role))
     return NextResponse.json({ error: 'Tipo de perfil inválido.' }, { status: 400 });
-  if (role === 'psicologo' && !council?.trim())
+  if (['psicologo', 'assistente_social'].includes(role) &&
+      (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
     return NextResponse.json(
-      { error: 'Informe o número do CRP para prosseguir com o cadastro.' },
-      { status: 400 },
-    );
-  if (role === 'assistente_social' && !council?.trim())
-    return NextResponse.json(
-      { error: 'Informe o número do CRESS para prosseguir com o cadastro.' },
+      { error: 'Selecione o Conselho Regional e informe o respectivo número.' },
       { status: 400 },
     );
   if (!state?.trim() || !municipality?.trim())
@@ -53,7 +49,7 @@ export async function POST(request: NextRequest) {
     full_name: fullName.trim(),
     role,
     job_title: jobTitle?.trim() || (role === 'psicologo' ? 'Psicólogo(a)' : role === 'assistente_social' ? 'Assistente Social' : 'Administrativo'),
-    council: council?.trim() || '',
+    council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS)\s*/i, '')}` : '',
     business_address: businessAddress?.trim() || '',
     state: state.trim(),
     municipality: municipality?.trim() || '',
