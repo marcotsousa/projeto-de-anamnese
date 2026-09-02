@@ -107,7 +107,7 @@ type AnamnesisRecord = {
   psychosocialAnswers?: Record<string, string>;
   updatedAt: string;
 };
-type UserRole = 'administrador' | 'psicologo' | 'administrativo';
+type UserRole = 'administrador' | 'psicologo' | 'assistente_social' | 'administrativo';
 const initialPatients: Patient[] = [
   {
     id: 1,
@@ -623,7 +623,9 @@ export default function ClinicApp() {
                   ? 'Administrador'
                   : role === 'psicologo'
                     ? 'Psicólogo'
-                    : 'Administrativo'}
+                    : role === 'assistente_social'
+                      ? 'Assistente Social'
+                      : 'Administrativo'}
               </p>
             </div>
             <button
@@ -1157,7 +1159,7 @@ function UserManagement() {
     setSavingUserId('');
     setMessage('Usuário excluído com sucesso.');
   }
-  const roleLabel = { administrador: 'Administrador', psicologo: 'Psicólogo', administrativo: 'Administrativo' };
+  const roleLabel = { administrador: 'Administrador', psicologo: 'Psicólogo', assistente_social: 'Assistente Social', administrativo: 'Administrativo' };
   return (
     <div className="mx-auto max-w-7xl">
       <div className="mb-6">
@@ -1184,6 +1186,7 @@ function UserManagement() {
             <select name="role" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="psicologo">
               <option value="administrador">Administrador — acesso total</option>
               <option value="psicologo">Psicólogo — prontuários e instrumentos</option>
+              <option value="assistente_social">Assistente Social — prontuários e instrumentos</option>
               <option value="administrativo">Administrativo — consulta de clientes</option>
             </select>
           </label>
@@ -1213,6 +1216,7 @@ function UserManagement() {
                     >
                       <option value="administrador">Administrador</option>
                       <option value="psicologo">Psicólogo</option>
+                      <option value="assistente_social">Assistente Social</option>
                       <option value="administrativo">Administrativo</option>
                     </select>
                   </label>
@@ -1464,7 +1468,7 @@ function LoginScreen({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
-  const [registrationRole, setRegistrationRole] = useState<'psicologo' | 'administrativo'>('psicologo');
+  const [registrationRole, setRegistrationRole] = useState<'psicologo' | 'assistente_social' | 'administrativo'>('psicologo');
   const [selectedState, setSelectedState] = useState('');
   const [municipalities, setMunicipalities] = useState<string[]>([]);
   const [loadingMunicipalities, setLoadingMunicipalities] = useState(false);
@@ -1579,13 +1583,17 @@ function LoginScreen({
             <Field label="Nome completo" name="fullName" autoComplete="new-password" />
             <label className="grid gap-1.5 text-sm font-semibold">
               Tipo de perfil
-              <select required name="role" value={registrationRole} onChange={(event) => setRegistrationRole(event.target.value as 'psicologo' | 'administrativo')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+              <select required name="role" value={registrationRole} onChange={(event) => setRegistrationRole(event.target.value as 'psicologo' | 'assistente_social' | 'administrativo')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
                 <option value="psicologo">Psicólogo</option>
+                <option value="assistente_social">Assistente Social</option>
                 <option value="administrativo">Administrativo</option>
               </select>
             </label>
             {registrationRole === 'psicologo' && (
               <Field label="Número do Conselho (CRP)" name="council" placeholder="Ex.: CRP 00/00000" autoComplete="new-password" />
+            )}
+            {registrationRole === 'assistente_social' && (
+              <Field label="Número do Conselho (CRESS)" name="council" placeholder="Ex.: CRESS 00000 / Região" autoComplete="new-password" />
             )}
             <Field label="Endereço comercial" name="businessAddress" autoComplete="new-password" />
             <div className="grid gap-4 sm:grid-cols-2">

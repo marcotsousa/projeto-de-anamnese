@@ -11,11 +11,16 @@ export async function POST(request: NextRequest) {
   const { fullName, email, password, role = 'psicologo', jobTitle, council, businessAddress, state, municipality, whatsapp } = await request.json();
   if (!fullName?.trim() || !email?.trim() || !password)
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 });
-  if (!['psicologo', 'administrativo'].includes(role))
+  if (!['psicologo', 'assistente_social', 'administrativo'].includes(role))
     return NextResponse.json({ error: 'Tipo de perfil inválido.' }, { status: 400 });
   if (role === 'psicologo' && !council?.trim())
     return NextResponse.json(
       { error: 'Informe o número do CRP para prosseguir com o cadastro.' },
+      { status: 400 },
+    );
+  if (role === 'assistente_social' && !council?.trim())
+    return NextResponse.json(
+      { error: 'Informe o número do CRESS para prosseguir com o cadastro.' },
       { status: 400 },
     );
   if (!state?.trim() || !municipality?.trim())
@@ -47,7 +52,7 @@ export async function POST(request: NextRequest) {
     user_id: data.user.id,
     full_name: fullName.trim(),
     role,
-    job_title: jobTitle?.trim() || (role === 'psicologo' ? 'Psicólogo(a)' : 'Administrativo'),
+    job_title: jobTitle?.trim() || (role === 'psicologo' ? 'Psicólogo(a)' : role === 'assistente_social' ? 'Assistente Social' : 'Administrativo'),
     council: council?.trim() || '',
     business_address: businessAddress?.trim() || '',
     state: state.trim(),
