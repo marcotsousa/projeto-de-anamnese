@@ -2213,9 +2213,11 @@ function PatientForm({
       });
     return () => { active = false; };
   }, [clientState]);
-  const macroregion = clientState === 'MG' && zonaDaMataMunicipalities.has(clientMunicipality)
-    ? 'Zona da Mata'
-    : '';
+  const macroregion = !clientMunicipality
+    ? ''
+    : clientState === 'MG' && zonaDaMataMunicipalities.has(clientMunicipality)
+      ? 'Zona da Mata'
+      : 'Outros Estados';
   return (
     <form onSubmit={submit} className="grid gap-5 bg-slate-50/70 p-5 sm:p-6">
       <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
