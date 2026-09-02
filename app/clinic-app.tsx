@@ -1731,7 +1731,6 @@ const psychosocialSections: Array<{ title: string; description: string; question
     title: 'Uso de substâncias psicoativas', description: 'Padrão de uso, impactos, gastos e motivação para interrupção.', questions: [
       { id: 13, label: 'Substância psicoativa mais utilizada', type: 'select', options: ['Álcool', 'Anfetamina', 'Cocaína', 'Êxtase (MDMA)', 'Haxixe', 'Heroína', 'Lança-perfume', 'Crack', 'LSD', 'Cetamina', 'Maconha', 'Outra'] },
       { id: 14, label: 'Tipo de SPA', type: 'select', options: ['Lícita', 'Ilícita', 'Ambas'] },
-      { id: 15, label: 'Uso de SPA', type: 'matrix', rows: ['Cafeína', 'Álcool', 'Cigarro', 'Maconha', 'Cocaína', 'Crack', 'Alucinógenos', 'Anfetaminas', 'Opioides (heroína, morfina)', 'Cetamina', 'Maconha sintética'], columns: ['Frequentemente', 'Às vezes', 'Raramente', 'Nunca'] },
       { id: 16, label: 'Valor gasto mensalmente com consumo de SPA', type: 'select', options: ['Menos que R$ 500,00', 'Entre R$ 500,00 e R$ 1.400,00', 'Acima de R$ 1.400,00', 'Não sabe'] },
       { id: 17, label: 'Idade de início do uso de SPA', type: 'select', options: ['7 a 11 anos', '12 a 16 anos', '17 a 21 anos', 'Após 22 anos'] },
       { id: 18, label: 'Impacto do uso de SPA em sua vida', type: 'textarea' },
@@ -1830,7 +1829,7 @@ function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patien
     <form onSubmit={submit} className="panel mt-6 overflow-hidden">
       <div className="sticky top-20 z-10 border-b bg-white/95 px-6 py-5 backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">65 questões organizadas em 6 blocos clínicos</p></div>
+          <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">64 questões organizadas em 6 blocos clínicos</p></div>
           <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">{saved ? 'Salvo com sucesso' : 'Salvar anamnese'}</button>
         </div>
         <div className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
