@@ -52,6 +52,8 @@ type Patient = {
   region?: string;
   serviceType?: string;
   residentialAddress?: string;
+  requesterEmail?: string;
+  stateSpa?: string;
 };
 type Assessment = {
   id: number;
@@ -433,13 +435,15 @@ export default function ClinicApp() {
         requesterRelationship: String(f.get('requesterRelationship')),
         contactOrigin: String(f.get('contactOrigin')),
         source: String(f.get('source')),
-        smoking: String(f.get('smoking')),
+        smoking: String(f.get('smoking') ?? ''),
         genderSpa: String(f.get('genderSpa')),
         maritalStatus: String(f.get('maritalStatus')),
         municipality: String(f.get('municipality')),
-        region: String(f.get('region')),
+        region: String(f.get('region') ?? ''),
         serviceType: String(f.get('serviceType')),
         residentialAddress: String(f.get('residentialAddress')),
+        requesterEmail: String(f.get('requesterEmail')),
+        stateSpa: String(f.get('stateSpa')),
       },
       ...v,
     ]);
@@ -996,20 +1000,20 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
             ['Data', p.registrationDate],
             ['Nome do solicitante', p.requesterName],
             ['Vínculo do solicitante', p.requesterRelationship],
+            ['Telefone do solicitante', p.phone],
+            ['E-mail do solicitante', p.requesterEmail],
             ['Nome do usuário (SPA)', p.name],
+            ['E-mail (SPA)', p.email],
             ['Data de nascimento', p.birth],
             ['Idade', p.age ? `${p.age} anos` : ''],
             ['Documento', p.document],
-            ['Telefone', p.phone],
-            ['E-mail', p.email],
-            ['Origem do contato', p.contactOrigin],
-            ['Fonte', p.source],
-            ['Tabagismo', p.smoking],
             ['Sexo SPA', p.genderSpa],
             ['Estado civil', p.maritalStatus],
+            ['Estado (UF)', p.stateSpa],
             ['Município', p.municipality],
             ['Endereço residencial', p.residentialAddress],
-            ['Região', p.region],
+            ['Origem do contato', p.contactOrigin],
+            ['Fonte', p.source],
             ['Status do atendimento', p.status],
             ['Tipo de atendimento', p.serviceType],
             ['Último atendimento', p.last],
@@ -1246,14 +1250,19 @@ function PatientView({
                 ['Data', p.registrationDate],
                 ['Solicitante', p.requesterName],
                 ['Vínculo', p.requesterRelationship],
-                ['Origem do contato', p.contactOrigin],
-                ['Fonte', p.source],
-                ['Tabagismo', p.smoking],
+                ['Telefone do solicitante', p.phone],
+                ['E-mail do solicitante', p.requesterEmail],
+                ['E-mail (SPA)', p.email],
+                ['Documento', p.document],
+                ['Data de nascimento', p.birth],
+                ['Idade', p.age ? `${p.age} anos` : ''],
                 ['Sexo SPA', p.genderSpa],
                 ['Estado civil', p.maritalStatus],
+                ['Estado (UF)', p.stateSpa],
                 ['Município', p.municipality],
                 ['Endereço residencial', p.residentialAddress],
-                ['Região', p.region],
+                ['Origem do contato', p.contactOrigin],
+                ['Fonte', p.source],
                 ['Status', p.status],
                 ['Tipo de atendimento', p.serviceType],
               ].map(([label, value]) => (
@@ -2115,6 +2124,24 @@ function PatientForm({
 }: {
   submit: (e: React.FormEvent<HTMLFormElement>) => void;
 }) {
+  const [clientState, setClientState] = useState('');
+  const [clientMunicipalities, setClientMunicipalities] = useState<string[]>([]);
+  useEffect(() => {
+    if (!clientState) {
+      setClientMunicipalities([]);
+      return;
+    }
+    let active = true;
+    fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${clientState}/municipios?orderBy=nome`)
+      .then((response) => response.json())
+      .then((items: Array<{ nome: string }>) => {
+        if (active) setClientMunicipalities(items.map((item) => item.nome));
+      })
+      .catch(() => {
+        if (active) setClientMunicipalities([]);
+      });
+    return () => { active = false; };
+  }, [clientState]);
   return (
     <form onSubmit={submit} className="grid gap-4 p-6">
       <h3 className="text-sm font-bold uppercase tracking-wide text-teal-700">Identificação do cliente</h3>
@@ -2124,34 +2151,48 @@ function PatientForm({
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Vínculo do solicitante" name="requesterRelationship" />
-        <Field label="Telefone" name="phone" type="tel" />
+        <Field label="Telefone do solicitante" name="phone" type="tel" />
       </div>
-      <Field label="Nome do usuário (SPA)" name="name" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="E-mail do solicitante" name="requesterEmail" type="email" />
+        <Field label="Nome do usuário (SPA)" name="name" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="E-mail (SPA)" name="email" type="email" />
+        <Field label="Documento de identificação do usuário" name="document" />
+      </div>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Data de nascimento" name="birth" type="date" />
         <Field label="Idade" name="age" type="number" />
       </div>
-      <Field label="Documento de identificação do usuário" name="document" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
+        <Field label="Estado civil" name="maritalStatus" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Estado (UF)
+          <select required name="stateSpa" value={clientState} onChange={(event) => setClientState(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+            <option value="">Selecione</option>
+            {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+          </select>
+        </label>
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Município
+          <select key={clientState} required name="municipality" disabled={!clientState} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
+            <option value="">{clientState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>
+            {clientMunicipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}
+          </select>
+        </label>
+      </div>
+      <Field label="Endereço residencial" name="residentialAddress" />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Origem do contato" name="contactOrigin" />
         <Field label="Fonte" name="source" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField label="Tabagismo" name="smoking" options={['Não', 'Sim', 'Ex-tabagista', 'Não informado']} />
-        <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Estado civil" name="maritalStatus" />
-        <Field label="Município" name="municipality" />
-      </div>
-      <Field label="Endereço residencial" name="residentialAddress" />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Região" name="region" />
         <SelectField label="Status do atendimento" name="status" options={['Novo cadastro', 'Aguardando atendimento', 'Em acompanhamento', 'Pausado', 'Encerrado']} />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
         <SelectField label="Tipo de atendimento" name="serviceType" options={['Presencial', 'Online', 'Híbrido', 'Não definido']} />
-        <Field label="E-mail" name="email" type="email" />
       </div>
       <Submit label="Cadastrar paciente" />
     </form>
