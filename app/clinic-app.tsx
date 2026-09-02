@@ -1135,10 +1135,10 @@ function UserManagement() {
     setMessage('Função atualizada com sucesso.');
   }
   async function toggleBlock(user: { id: string; fullName: string; email: string; blocked: boolean }) {
-    const actionLabel = user.blocked ? 'desbloquear' : 'bloquear';
-    if (!window.confirm(`Deseja ${actionLabel} o acesso de ${user.fullName || user.email}?`)) return;
+    const actionLabel = user.blocked ? 'reativar' : 'suspender';
+    if (!window.confirm(`Deseja ${actionLabel} a atividade de ${user.fullName || user.email}?`)) return;
     setSavingUserId(user.id);
-    setMessage(`${user.blocked ? 'Desbloqueando' : 'Bloqueando'} usuário…`);
+    setMessage(`${user.blocked ? 'Reativando' : 'Suspendendo'} atividade…`);
     const response = await request('/api/admin/users', {
       method: 'PATCH',
       body: JSON.stringify({ userId: user.id, action: user.blocked ? 'unblock' : 'block' }),
@@ -1150,7 +1150,7 @@ function UserManagement() {
     }
     setUsers((current) => current.map((item) => item.id === user.id ? { ...item, blocked: !item.blocked } : item));
     setSavingUserId('');
-    setMessage(`Usuário ${user.blocked ? 'desbloqueado' : 'bloqueado'} com sucesso.`);
+    setMessage(`Atividade ${user.blocked ? 'reativada' : 'suspensa'} com sucesso.`);
   }
   async function deleteUser(user: { id: string; fullName: string; email: string }) {
     if (!window.confirm(`Excluir permanentemente a conta de ${user.fullName || user.email}?\n\nEsta ação não pode ser desfeita.`)) return;
@@ -1214,6 +1214,13 @@ function UserManagement() {
               <option value="administrativo">Administrativo — consulta de clientes</option>
             </select>
           </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Situação da atividade
+            <select name="activityStatus" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="active">
+              <option value="active">Ativo — acesso liberado</option>
+              <option value="suspended">Suspenso — acesso bloqueado</option>
+            </select>
+          </label>
           <button className="h-11 w-full rounded-xl bg-[#176a68] font-semibold text-white">Criar usuário</button>
           {message && <p className="text-sm text-slate-500">{message}</p>}
         </form>
@@ -1258,7 +1265,7 @@ function UserManagement() {
                       onClick={() => toggleBlock(user)}
                       className={`flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold disabled:opacity-50 ${user.blocked ? 'border-emerald-200 text-emerald-700' : 'border-amber-200 text-amber-700'}`}
                     >
-                      <Ban size={15} /> {user.blocked ? 'Desbloquear' : 'Bloquear'}
+                      <Ban size={15} /> {user.blocked ? 'Reativar atividade' : 'Suspender atividade'}
                     </button>
                     <button
                       type="button"
@@ -1286,7 +1293,7 @@ function UserManagement() {
               ['Nome completo', viewingUser.fullName],
               ['E-mail', viewingUser.email],
               ['Perfil de acesso', roleLabel[viewingUser.role]],
-              ['Situação', viewingUser.blocked ? 'Bloqueado' : 'Ativo'],
+              ['Situação da atividade', viewingUser.blocked ? 'Suspensa' : 'Ativa'],
               ['Cargo', viewingUser.jobTitle],
               ['Conselho Regional', viewingUser.council],
               ['Disponibilidade', viewingUser.availabilityStart && viewingUser.availabilityEnd ? `${viewingUser.availabilityStart} às ${viewingUser.availabilityEnd}` : ''],

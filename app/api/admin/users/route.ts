@@ -66,12 +66,15 @@ export async function POST(request: NextRequest) {
     council,
     availabilityStart,
     availabilityEnd,
+    activityStatus = 'active',
     businessAddress,
     municipality,
     whatsapp,
   } = await request.json();
   if (!['administrador', 'psicologo', 'assistente_social', 'administrativo'].includes(role))
     return NextResponse.json({ error: 'Perfil inválido.' }, { status: 400 });
+  if (!['active', 'suspended'].includes(activityStatus))
+    return NextResponse.json({ error: 'Situação da atividade inválida.' }, { status: 400 });
   if (['psicologo', 'assistente_social'].includes(role) &&
       (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
     return NextResponse.json(
@@ -103,8 +106,17 @@ export async function POST(request: NextRequest) {
     municipality,
     whatsapp,
   });
-  if (profileError)
+  if (profileError) {
+    await admin.auth.admin.deleteUser(data.user.id);
     return NextResponse.json({ error: profileError.message }, { status: 400 });
+  }
+  if (activityStatus === 'suspended') {
+    const { error: suspendError } = await admin.auth.admin.updateUserById(data.user.id, {
+      ban_duration: '876000h',
+    });
+    if (suspendError)
+      return NextResponse.json({ error: 'Usuário criado, mas não foi possível suspender a atividade.' }, { status: 400 });
+  }
   return NextResponse.json({ ok: true });
 }
 
