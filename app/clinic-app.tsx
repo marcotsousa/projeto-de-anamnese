@@ -786,7 +786,7 @@ export default function ClinicApp() {
               canCreate={role !== 'administrativo'}
             />
           ) : active === 'Agenda' ? (
-            <Schedule patients={patients} select={setSelected} />
+            <Schedule patients={patients} select={setSelected} role={role} />
           ) : (
             <Dashboard
               patients={patients}
@@ -1013,11 +1013,12 @@ function Dashboard({
     </div>
   );
 }
-function Schedule({ patients, select }: { patients: Patient[]; select: (patient: Patient) => void }) {
+function Schedule({ patients, select, role }: { patients: Patient[]; select: (patient: Patient) => void; role: UserRole }) {
   const [scheduled, setScheduled] = useState<AppointmentRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [dateFilter, setDateFilter] = useState('');
   const [professionalFilter, setProfessionalFilter] = useState('');
+  const [professionalRoleFilter, setProfessionalRoleFilter] = useState('');
   useEffect(() => {
     let active = true;
     supabase?.auth.getSession().then(async ({ data }) => {
@@ -1029,11 +1030,16 @@ function Schedule({ patients, select }: { patients: Patient[]; select: (patient:
   }, []);
   const today = new Date().toISOString().slice(0, 10);
   const professionalOptions = Array.from(
-    new Map(scheduled.map((appointment) => [appointment.professionalId, appointment.professionalName])).entries(),
+    new Map(
+      scheduled
+        .filter((appointment) => !professionalRoleFilter || appointment.professionalRole === professionalRoleFilter)
+        .map((appointment) => [appointment.professionalId, appointment.professionalName]),
+    ).entries(),
   );
   const filtered = scheduled.filter((appointment) =>
     (!dateFilter || appointment.date === dateFilter) &&
-    (!professionalFilter || appointment.professionalId === professionalFilter),
+    (!professionalFilter || appointment.professionalId === professionalFilter) &&
+    (!professionalRoleFilter || appointment.professionalRole === professionalRoleFilter),
   );
   const appointmentsToday = scheduled.filter((appointment) => appointment.date === today).length;
   const upcomingAppointments = scheduled.filter((appointment) => appointment.date >= today).length;
@@ -1041,7 +1047,11 @@ function Schedule({ patients, select }: { patients: Patient[]; select: (patient:
     <div className="mx-auto max-w-6xl">
       <div className="mb-6">
         <h1 className="text-3xl font-bold">Agenda</h1>
-        <p className="mt-1 text-sm text-slate-500">Registros de atendimentos compartilhados entre os profissionais.</p>
+        <p className="mt-1 text-sm text-slate-500">
+          {role === 'administrativo'
+            ? 'Agenda completa de todos os Psicólogos e Assistentes Sociais.'
+            : 'Registros de atendimentos compartilhados entre os profissionais.'}
+        </p>
       </div>
       <div className="mb-5 grid gap-4 sm:grid-cols-3">
         <div className="panel p-5"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">Total de registros</p><p className="mt-2 text-3xl font-bold">{scheduled.length}</p></div>
@@ -1049,8 +1059,9 @@ function Schedule({ patients, select }: { patients: Patient[]; select: (patient:
         <div className="panel p-5"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">Próximos</p><p className="mt-2 text-3xl font-bold text-sky-700">{upcomingAppointments}</p></div>
       </div>
       <section className="panel overflow-hidden">
-        <div className="grid gap-4 border-b border-slate-100 p-5 sm:grid-cols-2">
+        <div className="grid gap-4 border-b border-slate-100 p-5 sm:grid-cols-3">
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por data<input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Categoria profissional<select value={professionalRoleFilter} onChange={(event) => { setProfessionalRoleFilter(event.target.value); setProfessionalFilter(''); }} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="">Psicólogos e Assistentes Sociais</option><option value="psicologo">Somente Psicólogos</option><option value="assistente_social">Somente Assistentes Sociais</option></select></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por profissional<select value={professionalFilter} onChange={(event) => setProfessionalFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="">Todos os profissionais</option>{professionalOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
         </div>
         {loading ? <p className="p-10 text-center text-sm text-slate-400">Carregando agenda…</p> : filtered.length ? (
