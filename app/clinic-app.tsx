@@ -51,6 +51,7 @@ type Patient = {
   municipality?: string;
   region?: string;
   serviceType?: string;
+  residentialAddress?: string;
 };
 type Assessment = {
   id: number;
@@ -438,6 +439,7 @@ export default function ClinicApp() {
         municipality: String(f.get('municipality')),
         region: String(f.get('region')),
         serviceType: String(f.get('serviceType')),
+        residentialAddress: String(f.get('residentialAddress')),
       },
       ...v,
     ]);
@@ -1006,6 +1008,7 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
             ['Sexo SPA', p.genderSpa],
             ['Estado civil', p.maritalStatus],
             ['Município', p.municipality],
+            ['Endereço residencial', p.residentialAddress],
             ['Região', p.region],
             ['Status do atendimento', p.status],
             ['Tipo de atendimento', p.serviceType],
@@ -1249,6 +1252,7 @@ function PatientView({
                 ['Sexo SPA', p.genderSpa],
                 ['Estado civil', p.maritalStatus],
                 ['Município', p.municipality],
+                ['Endereço residencial', p.residentialAddress],
                 ['Região', p.region],
                 ['Status', p.status],
                 ['Tipo de atendimento', p.serviceType],
@@ -2140,6 +2144,7 @@ function PatientForm({
         <Field label="Estado civil" name="maritalStatus" />
         <Field label="Município" name="municipality" />
       </div>
+      <Field label="Endereço residencial" name="residentialAddress" />
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Região" name="region" />
         <SelectField label="Status do atendimento" name="status" options={['Novo cadastro', 'Aguardando atendimento', 'Em acompanhamento', 'Pausado', 'Encerrado']} />
