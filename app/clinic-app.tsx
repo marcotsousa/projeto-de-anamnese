@@ -54,6 +54,7 @@ type Patient = {
   residentialAddress?: string;
   requesterEmail?: string;
   stateSpa?: string;
+  spaPhone?: string;
 };
 type Assessment = {
   id: number;
@@ -444,6 +445,7 @@ export default function ClinicApp() {
         residentialAddress: String(f.get('residentialAddress')),
         requesterEmail: String(f.get('requesterEmail')),
         stateSpa: String(f.get('stateSpa')),
+        spaPhone: String(f.get('spaPhone')),
       },
       ...v,
     ]);
@@ -1005,6 +1007,7 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
             ['E-mail do solicitante', p.requesterEmail],
             ['Nome do usuário (SPA)', p.name],
             ['E-mail (SPA)', p.email],
+            ['Telefone (SPA)', p.spaPhone],
             ['Data de nascimento', p.birth],
             ['Idade', p.age ? `${p.age} anos` : ''],
             ['Documento', p.document],
@@ -1254,6 +1257,7 @@ function PatientView({
                 ['Telefone do solicitante', p.phone],
                 ['E-mail do solicitante', p.requesterEmail],
                 ['E-mail (SPA)', p.email],
+                ['Telefone (SPA)', p.spaPhone],
                 ['Documento', p.document],
                 ['Data de nascimento', p.birth],
                 ['Idade', p.age ? `${p.age} anos` : ''],
@@ -1289,8 +1293,8 @@ function PatientView({
           </section>
           <section className="panel p-6">
             <h2 className="mb-5 text-lg font-bold">Contato</h2>
-            <p className="text-sm text-slate-400">Telefone</p>
-            <p className="font-medium">{p.phone}</p>
+            <p className="text-sm text-slate-400">Telefone (SPA)</p>
+            <p className="font-medium">{p.spaPhone || 'Não informado'}</p>
             <p className="mt-4 text-sm text-slate-400">E-mail</p>
             <p className="font-medium">{p.email}</p>
             <div className="mt-6 rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
@@ -2184,9 +2188,10 @@ function PatientForm({
       </FormSection>
 
       <FormSection number="2" title="Usuário SPA" description="Dados pessoais da pessoa que receberá o atendimento.">
+        <Field label="Nome do usuário (SPA)" name="name" />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Nome do usuário (SPA)" name="name" />
           <Field label="E-mail (SPA)" name="email" type="email" />
+          <Field label="Telefone (SPA)" name="spaPhone" type="tel" />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Documento de identificação" name="document" />
