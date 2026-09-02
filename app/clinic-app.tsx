@@ -740,6 +740,7 @@ export default function ClinicApp() {
                 : 'Aplicar instrumento'
           }
           close={close}
+          wide={modal === 'patient'}
         >
           {modal === 'patient' ? (
             <PatientForm submit={addPatient} />
@@ -2061,14 +2062,16 @@ function Modal({
   title,
   close,
   children,
+  wide = false,
 }: {
   title: string;
   close: () => void;
   children: React.ReactNode;
+  wide?: boolean;
 }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/35 p-4 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-xl overflow-y-auto rounded-3xl bg-white">
+      <div className={`max-h-[92vh] w-full overflow-y-auto rounded-3xl bg-white shadow-2xl ${wide ? 'max-w-4xl' : 'max-w-xl'}`}>
         <div className="flex items-center justify-between border-b px-6 py-5">
           <div>
             <h2 className="text-xl font-bold">{title}</h2>
@@ -2119,6 +2122,18 @@ const SelectField = ({ label, name, options }: { label: string; name: string; op
     </select>
   </label>
 );
+const FormSection = ({ number, title, description, children }: { number: string; title: string; description: string; children: React.ReactNode }) => (
+  <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+    <div className="mb-5 flex items-start gap-3 border-b border-slate-100 pb-4">
+      <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-teal-50 text-sm font-bold text-teal-700">{number}</span>
+      <div>
+        <h3 className="font-bold text-slate-800">{title}</h3>
+        <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+      </div>
+    </div>
+    <div className="grid gap-4">{children}</div>
+  </section>
+);
 function PatientForm({
   submit,
 }: {
@@ -2152,67 +2167,56 @@ function PatientForm({
     return () => { active = false; };
   }, [clientState]);
   return (
-    <form onSubmit={submit} className="grid gap-4 p-6">
-      <h3 className="text-sm font-bold uppercase tracking-wide text-teal-700">Identificação do cliente</h3>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-semibold">
-          Data
-          <input required name="registrationDate" type="date" defaultValue={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" />
-        </label>
-        <Field label="Nome do solicitante" name="requesterName" />
+    <form onSubmit={submit} className="grid gap-5 bg-slate-50/70 p-5 sm:p-6">
+      <FormSection number="1" title="Dados do solicitante" description="Identifique quem realizou o contato inicial.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm font-semibold">Data<input required name="registrationDate" type="date" defaultValue={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <Field label="Nome do solicitante" name="requesterName" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Vínculo do solicitante" name="requesterRelationship" />
+          <Field label="Telefone do solicitante" name="phone" type="tel" />
+          <Field label="E-mail do solicitante" name="requesterEmail" type="email" />
+        </div>
+      </FormSection>
+
+      <FormSection number="2" title="Usuário SPA" description="Dados pessoais da pessoa que receberá o atendimento.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Nome do usuário (SPA)" name="name" />
+          <Field label="E-mail (SPA)" name="email" type="email" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <Field label="Documento de identificação" name="document" />
+          <label className="grid gap-1.5 text-sm font-semibold">Data de nascimento<input required name="birth" type="date" max={todayValue} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Idade<input required readOnly name="age" type="number" value={calculatedAge} placeholder="Automática" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" /></label>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
+          <Field label="Estado civil" name="maritalStatus" />
+        </div>
+      </FormSection>
+
+      <FormSection number="3" title="Endereço residencial" description="Selecione a UF para carregar os municípios correspondentes.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm font-semibold">Estado (UF)<select required name="stateSpa" value={clientState} onChange={(event) => setClientState(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500"><option value="">Selecione</option>{['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => <option key={uf} value={uf}>{uf}</option>)}</select></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Município<select key={clientState} required name="municipality" disabled={!clientState} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400"><option value="">{clientState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>{clientMunicipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}</select></label>
+        </div>
+        <Field label="Logradouro, número e complemento" name="residentialAddress" />
+      </FormSection>
+
+      <FormSection number="4" title="Dados do atendimento" description="Registre a origem e a modalidade do atendimento.">
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Origem do contato" name="contactOrigin" />
+          <Field label="Fonte" name="source" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SelectField label="Status do atendimento" name="status" options={['Novo cadastro', 'Aguardando atendimento', 'Em acompanhamento', 'Pausado', 'Encerrado']} />
+          <SelectField label="Tipo de atendimento" name="serviceType" options={['Presencial', 'Online', 'Híbrido', 'Não definido']} />
+        </div>
+      </FormSection>
+      <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end border-t bg-white/95 px-5 py-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
+        <Submit label="Cadastrar paciente" />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Vínculo do solicitante" name="requesterRelationship" />
-        <Field label="Telefone do solicitante" name="phone" type="tel" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="E-mail do solicitante" name="requesterEmail" type="email" />
-        <Field label="Nome do usuário (SPA)" name="name" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="E-mail (SPA)" name="email" type="email" />
-        <Field label="Documento de identificação do usuário" name="document" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-semibold">
-          Data de nascimento
-          <input required name="birth" type="date" max={todayValue} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" />
-        </label>
-        <label className="grid gap-1.5 text-sm font-semibold">
-          Idade
-          <input required readOnly name="age" type="number" value={calculatedAge} placeholder="Calculada automaticamente" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" />
-        </label>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
-        <Field label="Estado civil" name="maritalStatus" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-semibold">
-          Estado (UF)
-          <select required name="stateSpa" value={clientState} onChange={(event) => setClientState(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
-            <option value="">Selecione</option>
-            {['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map((uf) => <option key={uf} value={uf}>{uf}</option>)}
-          </select>
-        </label>
-        <label className="grid gap-1.5 text-sm font-semibold">
-          Município
-          <select key={clientState} required name="municipality" disabled={!clientState} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
-            <option value="">{clientState ? 'Selecione o município' : 'Selecione o estado primeiro'}</option>
-            {clientMunicipalities.map((municipality) => <option key={municipality} value={municipality}>{municipality}</option>)}
-          </select>
-        </label>
-      </div>
-      <Field label="Endereço residencial" name="residentialAddress" />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Origem do contato" name="contactOrigin" />
-        <Field label="Fonte" name="source" />
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <SelectField label="Status do atendimento" name="status" options={['Novo cadastro', 'Aguardando atendimento', 'Em acompanhamento', 'Pausado', 'Encerrado']} />
-        <SelectField label="Tipo de atendimento" name="serviceType" options={['Presencial', 'Online', 'Híbrido', 'Não definido']} />
-      </div>
-      <Submit label="Cadastrar paciente" />
     </form>
   );
 }
