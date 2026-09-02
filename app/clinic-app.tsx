@@ -428,19 +428,19 @@ export default function ClinicApp() {
         document: String(f.get('document')),
         birth: String(f.get('birth')),
         last: 'Ainda não atendido',
-        status: String(f.get('status')),
+        status: String(f.get('status') ?? 'Novo cadastro'),
         color: 'bg-teal-100 text-teal-700',
         registrationDate: String(f.get('registrationDate')),
         requesterName: String(f.get('requesterName')),
         requesterRelationship: String(f.get('requesterRelationship')),
-        contactOrigin: String(f.get('contactOrigin')),
-        source: String(f.get('source')),
+        contactOrigin: String(f.get('contactOrigin') ?? ''),
+        source: String(f.get('source') ?? ''),
         smoking: String(f.get('smoking') ?? ''),
         genderSpa: String(f.get('genderSpa')),
         maritalStatus: String(f.get('maritalStatus')),
         municipality: String(f.get('municipality')),
         region: String(f.get('region') ?? ''),
-        serviceType: String(f.get('serviceType')),
+        serviceType: String(f.get('serviceType') ?? ''),
         residentialAddress: String(f.get('residentialAddress')),
         requesterEmail: String(f.get('requesterEmail')),
         stateSpa: String(f.get('stateSpa')),
@@ -2207,16 +2207,6 @@ function PatientForm({
         <Field label="Logradouro, número e complemento" name="residentialAddress" />
       </FormSection>
 
-      <FormSection number="4" title="Dados do atendimento" description="Registre a origem e a modalidade do atendimento.">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Origem do contato" name="contactOrigin" />
-          <Field label="Fonte" name="source" />
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SelectField label="Status do atendimento" name="status" options={['Novo cadastro', 'Aguardando atendimento', 'Em acompanhamento', 'Pausado', 'Encerrado']} />
-          <SelectField label="Tipo de atendimento" name="serviceType" options={['Presencial', 'Online', 'Híbrido', 'Não definido']} />
-        </div>
-      </FormSection>
       <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end border-t bg-white/95 px-5 py-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
         <Submit label="Cadastrar paciente" />
       </div>
