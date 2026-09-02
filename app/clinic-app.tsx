@@ -58,6 +58,18 @@ type Patient = {
   requesterEmail?: string;
   stateSpa?: string;
   spaPhone?: string;
+  assignedProfessionalId?: string;
+  assignedProfessionalName?: string;
+  assignedProfessionalRole?: string;
+  appointmentDate?: string;
+  appointmentTime?: string;
+};
+type ProfessionalOption = {
+  id: string;
+  name: string;
+  role: 'psicologo' | 'assistente_social';
+  availabilityStart: string;
+  availabilityEnd: string;
 };
 type Assessment = {
   id: number;
@@ -452,6 +464,11 @@ export default function ClinicApp() {
         requesterEmail: String(f.get('requesterEmail')),
         stateSpa: String(f.get('stateSpa')),
         spaPhone: String(f.get('spaPhone')),
+        assignedProfessionalId: String(f.get('assignedProfessionalId')),
+        assignedProfessionalName: String(f.get('assignedProfessionalName')),
+        assignedProfessionalRole: String(f.get('assignedProfessionalRole')),
+        appointmentDate: String(f.get('appointmentDate')),
+        appointmentTime: String(f.get('appointmentTime')),
       },
       ...v,
     ]);
@@ -733,6 +750,8 @@ export default function ClinicApp() {
               open={() => role !== 'administrativo' && setModal('patient')}
               canCreate={role !== 'administrativo'}
             />
+          ) : active === 'Agenda' ? (
+            <Schedule patients={patients} select={setSelected} />
           ) : (
             <Dashboard
               patients={patients}
@@ -744,6 +763,7 @@ export default function ClinicApp() {
                 setSelected(p);
               }}
               open={() => setModal('patient')}
+              openAgenda={() => setActive('Agenda')}
             />
           )}
         </div>
@@ -780,6 +800,7 @@ function Dashboard({
   profileName,
   select,
   open,
+  openAgenda,
 }: {
   patients: Patient[];
   sessions: Session[];
@@ -787,12 +808,14 @@ function Dashboard({
   profileName: string;
   select: (p: Patient) => void;
   open: () => void;
+  openAgenda: () => void;
 }) {
   const now = new Date();
   const todayIso = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   const monthPrefix = todayIso.slice(0, 7);
   const activePatients = patients.filter((patient) => patient.status !== 'Encerrado').length;
-  const sessionsToday = sessions.filter((session) => session.isoDate === todayIso).length;
+  const scheduledToday = patients.filter((patient) => patient.appointmentDate === todayIso);
+  const sessionsToday = sessions.filter((session) => session.isoDate === todayIso).length + scheduledToday.length;
   const sessionsThisMonth = sessions.filter((session) => session.isoDate?.startsWith(monthPrefix)).length;
   const pendingAssessments = assessments.filter((assessment) => assessment.level.toLowerCase().includes('pendente')).length;
   const todayAppointments = sessions
@@ -855,13 +878,22 @@ function Dashboard({
           <div className="panel-head">
             <div>
               <h2>Agenda de hoje</h2>
-              <p>{todayAppointments.length} atendimento(s) registrado(s)</p>
+              <p>{todayAppointments.length + scheduledToday.length} atendimento(s) agendado(s)/registrado(s)</p>
             </div>
-            <button className="text-sm font-semibold text-[#176a68]">
+            <button onClick={openAgenda} className="text-sm font-semibold text-[#176a68]">
               Ver agenda
             </button>
           </div>
           <div className="divide-y divide-slate-100">
+            {scheduledToday.map((patient) => (
+              <Appointment
+                key={`scheduled-${patient.id}`}
+                time={patient.appointmentTime || ''}
+                p={patient}
+                tag="Agendado"
+                select={select}
+              />
+            ))}
             {todayAppointments.map(({ patient, session }) => (
               <Appointment
                 key={session.id}
@@ -871,7 +903,7 @@ function Dashboard({
                 select={select}
               />
             ))}
-            {todayAppointments.length === 0 && (
+            {todayAppointments.length === 0 && scheduledToday.length === 0 && (
               <p className="p-8 text-center text-sm text-slate-400">
                 Nenhuma sessão registrada para hoje.
               </p>
@@ -942,6 +974,36 @@ function Dashboard({
             </tbody>
           </table>
         </div>
+      </section>
+    </div>
+  );
+}
+function Schedule({ patients, select }: { patients: Patient[]; select: (patient: Patient) => void }) {
+  const scheduled = patients
+    .filter((patient) => patient.appointmentDate && patient.appointmentTime)
+    .sort((a, b) => `${a.appointmentDate}T${a.appointmentTime}`.localeCompare(`${b.appointmentDate}T${b.appointmentTime}`));
+  return (
+    <div className="mx-auto max-w-6xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Agenda</h1>
+        <p className="mt-1 text-sm text-slate-500">Atendimentos agendados no cadastro dos Acolhidos.</p>
+      </div>
+      <section className="panel overflow-hidden">
+        {scheduled.length ? (
+          <div className="divide-y divide-slate-100">
+            {scheduled.map((patient) => (
+              <button key={patient.id} onClick={() => select(patient)} className="grid w-full gap-3 p-5 text-left hover:bg-slate-50 sm:grid-cols-[140px_1fr_1fr_auto] sm:items-center">
+                <div>
+                  <p className="font-bold text-teal-700">{new Date(`${patient.appointmentDate}T12:00:00`).toLocaleDateString('pt-BR')}</p>
+                  <p className="text-sm text-slate-500">{patient.appointmentTime}</p>
+                </div>
+                <div><p className="font-semibold">{patient.name}</p><p className="text-xs text-slate-500">Acolhido</p></div>
+                <div><p className="font-medium">{patient.assignedProfessionalName}</p><p className="text-xs text-slate-500">{patient.assignedProfessionalRole}</p></div>
+                <ChevronRight size={18} className="text-slate-300" />
+              </button>
+            ))}
+          </div>
+        ) : <p className="p-10 text-center text-sm text-slate-400">Nenhum atendimento agendado.</p>}
       </section>
     </div>
   );
@@ -1048,6 +1110,9 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
             ['Status do atendimento', p.status],
             ['Tipo de atendimento', p.serviceType],
             ['Último atendimento', p.last],
+            ['Profissional responsável', p.assignedProfessionalName],
+            ['Data do atendimento', p.appointmentDate ? new Date(`${p.appointmentDate}T12:00:00`).toLocaleDateString('pt-BR') : ''],
+            ['Horário do atendimento', p.appointmentTime],
           ].map(([label, value]) => (
             <div key={label}>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
@@ -1409,6 +1474,8 @@ function PatientView({
                 ['Estado civil', p.maritalStatus],
                 ['Estado (UF)', p.stateSpa],
                 ['Município', p.municipality],
+                ['Profissional responsável', p.assignedProfessionalName],
+                ['Atendimento agendado', p.appointmentDate && p.appointmentTime ? `${new Date(`${p.appointmentDate}T12:00:00`).toLocaleDateString('pt-BR')} às ${p.appointmentTime}` : ''],
                 ['Macrorregião', p.region],
                 ['Endereço residencial', p.residentialAddress],
                 ['Origem do contato', p.contactOrigin],
@@ -2469,6 +2536,9 @@ function PatientForm({
   const [clientMunicipality, setClientMunicipality] = useState('');
   const [clientMunicipalities, setClientMunicipalities] = useState<string[]>([]);
   const [birthDate, setBirthDate] = useState('');
+  const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState('');
+  const [professionalsLoading, setProfessionalsLoading] = useState(true);
   const today = new Date();
   const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   const calculatedAge = birthDate ? (() => {
@@ -2477,6 +2547,21 @@ function PatientForm({
     if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age--;
     return Math.max(0, age);
   })() : '';
+  const selectedProfessional = professionals.find((professional) => professional.id === selectedProfessionalId);
+  useEffect(() => {
+    let active = true;
+    supabase?.auth.getSession().then(async ({ data }) => {
+      const token = data.session?.access_token;
+      if (!token) return;
+      try {
+        const response = await fetch('/api/professionals', { headers: { Authorization: `Bearer ${token}` } });
+        if (response.ok && active) setProfessionals(await response.json());
+      } finally {
+        if (active) setProfessionalsLoading(false);
+      }
+    });
+    return () => { active = false; };
+  }, []);
   useEffect(() => {
     if (!clientState) {
       setClientMunicipalities([]);
@@ -2543,6 +2628,36 @@ function PatientForm({
           Macrorregião
           <input readOnly name="region" value={macroregion} placeholder="Preenchida conforme o município" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" />
         </label>
+      </FormSection>
+
+      <FormSection number="4" title="Agendamento do atendimento" description="Defina o profissional, a data e o horário do primeiro atendimento.">
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Psicólogo ou Assistente Social
+          <select required name="assignedProfessionalId" value={selectedProfessionalId} onChange={(event) => setSelectedProfessionalId(event.target.value)} disabled={professionalsLoading} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
+            <option value="">{professionalsLoading ? 'Carregando profissionais…' : 'Selecione o profissional'}</option>
+            {professionals.map((professional) => (
+              <option key={professional.id} value={professional.id}>
+                {professional.name} — {professional.role === 'psicologo' ? 'Psicólogo' : 'Assistente Social'}
+              </option>
+            ))}
+          </select>
+        </label>
+        <input type="hidden" name="assignedProfessionalName" value={selectedProfessional?.name ?? ''} />
+        <input type="hidden" name="assignedProfessionalRole" value={selectedProfessional?.role === 'psicologo' ? 'Psicólogo' : selectedProfessional ? 'Assistente Social' : ''} />
+        {selectedProfessional && (
+          <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">
+            Disponibilidade: {selectedProfessional.availabilityStart && selectedProfessional.availabilityEnd
+              ? `${selectedProfessional.availabilityStart} às ${selectedProfessional.availabilityEnd}`
+              : 'horário ainda não informado'}
+          </p>
+        )}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="appointmentDate" type="date" min={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Horário do atendimento<input required name="appointmentTime" type="time" min={selectedProfessional?.availabilityStart || undefined} max={selectedProfessional?.availabilityEnd || undefined} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+        </div>
+        {!professionalsLoading && professionals.length === 0 && (
+          <p className="text-sm font-medium text-amber-700">Nenhum profissional ativo está disponível para agendamento.</p>
+        )}
       </FormSection>
 
       <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end border-t bg-white/95 px-5 py-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
