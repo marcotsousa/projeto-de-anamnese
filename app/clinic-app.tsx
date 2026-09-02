@@ -604,7 +604,7 @@ export default function ClinicApp() {
   }
   const visibleNav =
     role === 'administrativo'
-      ? ([['Acolhidos', Users]] as const)
+      ? ([['Acolhidos', Users], ['Agenda', CalendarDays]] as const)
       : role === 'administrador'
         ? ([...nav, ['Usuários', UserCog]] as const)
         : nav;
