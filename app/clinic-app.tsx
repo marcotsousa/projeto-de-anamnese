@@ -1,6 +1,7 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { mgMesoregionEntries } from './mg-mesoregions';
 import {
   Activity,
   Ban,
@@ -209,15 +210,9 @@ const normalizeMunicipality = (value: string) => value
   .trim()
   .toLocaleLowerCase('pt-BR');
 
-const zonaDaMataMunicipalities = new Set([
-  'Paiva', 'Pedro Teixeira', 'Pequeri', 'Piau', 'Rio Novo', 'Rio Preto',
-  'Rochedo de Minas', 'Santa Bárbara do Monte Verde', 'Santa Rita do Ibitipoca',
-  'Santa Rita do Jacutinga', 'Santana do Deserto', 'Santos Dumont',
-  'São João Nepomuceno', 'Senador Cortes', 'Simão Pereira', 'Além Paraíba',
-  'Argirita', 'Cataguases', 'Dona Eusébia', "Estrela-d'Alva", 'Estrela Dalva',
-  'Itamarati de Minas', 'Laranjal', 'Leopoldina', 'Palma', 'Pirapetinga',
-  'Recreio', 'Santana de Cataguases', 'Santo Antônio do Aventureiro', 'Volta Grande',
-].map(normalizeMunicipality));
+const mgMesoregions = new Map(
+  mgMesoregionEntries.map(([municipality, mesoregion]) => [normalizeMunicipality(municipality), mesoregion]),
+);
 
 function usePersistentState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState(initialValue);
@@ -2477,8 +2472,8 @@ function PatientForm({
   }, [clientState]);
   const macroregion = !clientMunicipality
     ? ''
-    : clientState.trim().toUpperCase() === 'MG' && zonaDaMataMunicipalities.has(normalizeMunicipality(clientMunicipality))
-      ? 'Zona da Mata'
+    : clientState.trim().toUpperCase() === 'MG'
+      ? mgMesoregions.get(normalizeMunicipality(clientMunicipality)) ?? 'Outros Estados'
       : 'Outros Estados';
   return (
     <form onSubmit={submit} className="grid gap-5 bg-slate-50/70 p-5 sm:p-6">
