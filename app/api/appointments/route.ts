@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
   const includeAll = request.nextUrl.searchParams.get('all') === 'true';
   let query = authorization.admin
     .from('appointments')
-    .select('id, client_reference, client_name, professional_user_id, professional_name, professional_role, appointment_date, start_time, end_time, status')
+    .select('id, client_reference, client_name, client_phone, professional_user_id, professional_name, professional_role, appointment_date, start_time, end_time, status')
     .neq('status', 'cancelado')
     .order('appointment_date')
     .order('start_time');
@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
     id: item.id,
     clientReference: item.client_reference,
     clientName: item.client_name,
+    clientPhone: item.client_phone,
     professionalId: item.professional_user_id,
     professionalName: item.professional_name,
     professionalRole: item.professional_role,
@@ -55,9 +56,9 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const authorization = await authorize(request);
   if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
-  const { clientReference, clientName, professionalId, date, startTime } = await request.json();
-  if (!clientReference || !clientName?.trim() || !professionalId || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime))
-    return NextResponse.json({ error: 'Preencha profissional, data e horário.' }, { status: 400 });
+  const { clientReference, clientName, clientPhone, professionalId, date, startTime } = await request.json();
+  if (!clientReference || !clientName?.trim() || !clientPhone?.trim() || !professionalId || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime))
+    return NextResponse.json({ error: 'Preencha telefone, profissional, data e horário.' }, { status: 400 });
   if (date < new Date().toISOString().slice(0, 10))
     return NextResponse.json({ error: 'A data do atendimento não pode estar no passado.' }, { status: 400 });
 
@@ -90,6 +91,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await authorization.admin.from('appointments').insert({
     client_reference: String(clientReference),
     client_name: clientName.trim(),
+    client_phone: clientPhone.trim(),
     professional_user_id: professionalId,
     professional_name: professional.full_name,
     professional_role: professional.role,

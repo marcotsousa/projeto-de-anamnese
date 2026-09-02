@@ -18,6 +18,7 @@ import {
   LockKeyhole,
   LogOut,
   Menu,
+  MessageCircle,
   NotebookPen,
   Plus,
   Search,
@@ -76,6 +77,7 @@ type AppointmentRecord = {
   id: string;
   clientReference: string;
   clientName: string;
+  clientPhone: string;
   professionalId: string;
   professionalName: string;
   professionalRole: 'psicologo' | 'assistente_social';
@@ -455,6 +457,7 @@ export default function ClinicApp() {
       body: JSON.stringify({
         clientReference: patientId,
         clientName: name,
+        clientPhone: String(f.get('spaPhone')),
         professionalId: String(f.get('assignedProfessionalId')),
         date: String(f.get('appointmentDate')),
         startTime: String(f.get('appointmentTime')),
@@ -1057,16 +1060,26 @@ function Schedule({ patients, select }: { patients: Patient[]; select: (patient:
           <div className="divide-y divide-slate-100">
             {filtered.map((appointment) => {
               const localPatient = patients.find((patient) => String(patient.id) === appointment.clientReference);
+              const phoneDigits = appointment.clientPhone.replace(/\D/g, '');
+              const whatsappPhone = phoneDigits.startsWith('55') ? phoneDigits : `55${phoneDigits.replace(/^0/, '')}`;
+              const formattedDate = new Date(`${appointment.date}T12:00:00`).toLocaleDateString('pt-BR');
+              const whatsappMessage = encodeURIComponent(`Olá, ${appointment.clientName}. Confirmamos seu atendimento em ${formattedDate}, às ${appointment.startTime}, com ${appointment.professionalName}.`);
               return (
-              <button key={appointment.id} onClick={() => localPatient && select(localPatient)} disabled={!localPatient} className="grid w-full gap-3 p-5 text-left hover:bg-slate-50 disabled:cursor-default sm:grid-cols-[140px_1fr_1fr_auto] sm:items-center">
+              <div key={appointment.id} className="grid w-full gap-3 p-5 text-left hover:bg-slate-50 sm:grid-cols-[140px_1fr_1fr_auto] sm:items-center">
                 <div>
-                  <p className="font-bold text-teal-700">{new Date(`${appointment.date}T12:00:00`).toLocaleDateString('pt-BR')}</p>
+                  <p className="font-bold text-teal-700">{formattedDate}</p>
                   <p className="text-sm text-slate-500">{appointment.startTime}–{appointment.endTime}</p>
                 </div>
-                <div><p className="font-semibold">{appointment.clientName}</p><p className="text-xs text-slate-500">Acolhido</p></div>
+                <div><p className="font-semibold">{appointment.clientName}</p><p className="text-xs text-slate-500">{appointment.clientPhone}</p></div>
                 <div><p className="font-medium">{appointment.professionalName}</p><p className="text-xs text-slate-500">{appointment.professionalRole === 'psicologo' ? 'Psicólogo' : 'Assistente Social'}</p></div>
-                <span className="rounded-full bg-teal-50 px-3 py-1 text-center text-xs font-semibold capitalize text-teal-700">{appointment.status}</span>
-              </button>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  <span className="rounded-full bg-teal-50 px-3 py-1 text-center text-xs font-semibold capitalize text-teal-700">{appointment.status}</span>
+                  <a href={`https://wa.me/${whatsappPhone}?text=${whatsappMessage}`} target="_blank" rel="noreferrer" className="flex h-9 items-center gap-2 rounded-lg bg-emerald-600 px-3 text-xs font-semibold text-white" aria-label={`Enviar WhatsApp para ${appointment.clientName}`}>
+                    <MessageCircle size={15} /> WhatsApp
+                  </a>
+                  {localPatient && <button type="button" onClick={() => select(localPatient)} className="grid h-9 w-9 place-items-center rounded-lg border text-slate-500" aria-label={`Abrir prontuário de ${appointment.clientName}`}><ChevronRight size={18} /></button>}
+                </div>
+              </div>
               );
             })}
           </div>
