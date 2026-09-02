@@ -1828,9 +1828,25 @@ function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patien
   }
   return (
     <form onSubmit={submit} className="panel mt-6 overflow-hidden">
-      <div className="sticky top-20 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-white/95 px-6 py-5 backdrop-blur">
-        <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">65 questões organizadas em 6 blocos clínicos</p></div>
-        <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">{saved ? 'Salvo com sucesso' : 'Salvar anamnese'}</button>
+      <div className="sticky top-20 z-10 border-b bg-white/95 px-6 py-5 backdrop-blur">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">65 questões organizadas em 6 blocos clínicos</p></div>
+          <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">{saved ? 'Salvo com sucesso' : 'Salvar anamnese'}</button>
+        </div>
+        <div className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
+          {[
+            ['Nome', patient.name],
+            ['Sexo', patient.genderSpa],
+            ['Data de nascimento', patient.birth],
+            ['Estado civil', patient.maritalStatus],
+            ['Município', patient.municipality],
+          ].map(([label, content]) => (
+            <div key={label} className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</p>
+              <p className="truncate text-sm font-semibold text-slate-700">{content || 'Não informado'}</p>
+            </div>
+          ))}
+        </div>
       </div>
       <div className="space-y-6 bg-slate-50/60 p-5 sm:p-6">
         {psychosocialSections.map((section, sectionIndex) => (
