@@ -1720,17 +1720,10 @@ type PsychQuestion = {
 const psychosocialSections: Array<{ title: string; description: string; questions: PsychQuestion[] }> = [
   {
     title: 'Identificação', description: 'Dados pessoais, documentação, referência e demanda inicial.', questions: [
-      { id: 1, label: 'Nome do Acolhido' },
-      { id: 2, label: 'Sexo', type: 'select', options: ['Masculino', 'Feminino', 'Masculino Trans', 'Feminino Trans'] },
-      { id: 3, label: 'Contato telefônico (número)' },
-      { id: 4, label: 'Data de nascimento', type: 'date' },
-      { id: 5, label: 'Estado civil', type: 'select', options: ['Solteiro(a)', 'Casado(a)', 'União estável', 'Viúvo(a)', 'Separado(a)', 'Divorciado(a)'] },
       { id: 6, label: 'Situação de documentação básica', type: 'multi', options: ['RG', 'CPF', 'CTPS', 'Certidão de nascimento', 'Certificado de reservista'] },
       { id: 7, label: 'Pessoa de referência (nome e relação com o entrevistado)' },
       { id: 8, label: 'Cor autodeclarada', type: 'select', options: ['Branco(a)', 'Preto(a)', 'Pardo(a)', 'Amarelo(a)', 'Indígena', 'Não informado'] },
       { id: 9, label: 'Município de nascimento' },
-      { id: 10, label: 'Endereço residencial' },
-      { id: 11, label: 'Município residencial' },
       { id: 12, label: 'Queixas', type: 'textarea' },
     ],
   },
@@ -1819,7 +1812,7 @@ const psychosocialSections: Array<{ title: string; description: string; question
 function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patient; value?: AnamnesisRecord; onSave: (record: AnamnesisRecord) => void }) {
   const [saved, setSaved] = useState(false);
   const answers = value?.psychosocialAnswers ?? {};
-  const defaults: Record<string, string> = { q1: patient.name, q2: patient.genderSpa ?? '', q3: patient.spaPhone ?? '', q4: patient.birth, q5: patient.maritalStatus ?? '', q10: patient.residentialAddress ?? '', q11: patient.municipality ?? '' };
+  const defaults: Record<string, string> = {};
   const answer = (key: string) => answers[key] ?? defaults[key] ?? '';
   function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -1836,7 +1829,7 @@ function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patien
   return (
     <form onSubmit={submit} className="panel mt-6 overflow-hidden">
       <div className="sticky top-20 z-10 flex flex-wrap items-center justify-between gap-3 border-b bg-white/95 px-6 py-5 backdrop-blur">
-        <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">72 questões organizadas em 6 blocos clínicos</p></div>
+        <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">65 questões organizadas em 6 blocos clínicos</p></div>
         <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">{saved ? 'Salvo com sucesso' : 'Salvar anamnese'}</button>
       </div>
       <div className="space-y-6 bg-slate-50/60 p-5 sm:p-6">
