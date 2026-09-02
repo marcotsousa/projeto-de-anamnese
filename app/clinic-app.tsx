@@ -40,6 +40,17 @@ type Patient = {
   last: string;
   status: string;
   color: string;
+  registrationDate?: string;
+  requesterName?: string;
+  requesterRelationship?: string;
+  contactOrigin?: string;
+  source?: string;
+  smoking?: string;
+  genderSpa?: string;
+  maritalStatus?: string;
+  municipality?: string;
+  region?: string;
+  serviceType?: string;
 };
 type Assessment = {
   id: number;
@@ -408,14 +419,25 @@ export default function ClinicApp() {
           .slice(0, 2)
           .join('')
           .toUpperCase(),
-        age: 0,
+        age: Number(f.get('age')),
         phone: String(f.get('phone')),
         email: String(f.get('email')),
         document: String(f.get('document')),
         birth: String(f.get('birth')),
         last: 'Ainda não atendido',
-        status: 'Novo cadastro',
+        status: String(f.get('status')),
         color: 'bg-teal-100 text-teal-700',
+        registrationDate: String(f.get('registrationDate')),
+        requesterName: String(f.get('requesterName')),
+        requesterRelationship: String(f.get('requesterRelationship')),
+        contactOrigin: String(f.get('contactOrigin')),
+        source: String(f.get('source')),
+        smoking: String(f.get('smoking')),
+        genderSpa: String(f.get('genderSpa')),
+        maritalStatus: String(f.get('maritalStatus')),
+        municipality: String(f.get('municipality')),
+        region: String(f.get('region')),
+        serviceType: String(f.get('serviceType')),
       },
       ...v,
     ]);
@@ -969,11 +991,24 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
         </div>
         <div className="grid gap-5 border-t pt-6 sm:grid-cols-2">
           {[
+            ['Data', p.registrationDate],
+            ['Nome do solicitante', p.requesterName],
+            ['Vínculo do solicitante', p.requesterRelationship],
+            ['Nome do usuário (SPA)', p.name],
             ['Data de nascimento', p.birth],
+            ['Idade', p.age ? `${p.age} anos` : ''],
             ['Documento', p.document],
             ['Telefone', p.phone],
             ['E-mail', p.email],
-            ['Status', p.status],
+            ['Origem do contato', p.contactOrigin],
+            ['Fonte', p.source],
+            ['Tabagismo', p.smoking],
+            ['Sexo SPA', p.genderSpa],
+            ['Estado civil', p.maritalStatus],
+            ['Município', p.municipality],
+            ['Região', p.region],
+            ['Status do atendimento', p.status],
+            ['Tipo de atendimento', p.serviceType],
             ['Último atendimento', p.last],
           ].map(([label, value]) => (
             <div key={label}>
@@ -1202,7 +1237,29 @@ function PatientView({
       {tab === 'Resumo' && (
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_.8fr]">
           <section className="panel p-6">
-            <h2 className="mb-5 text-lg font-bold">Resumo clínico</h2>
+            <h2 className="mb-5 text-lg font-bold">Identificação do cliente</h2>
+            <div className="mb-6 grid gap-4 sm:grid-cols-2">
+              {[
+                ['Data', p.registrationDate],
+                ['Solicitante', p.requesterName],
+                ['Vínculo', p.requesterRelationship],
+                ['Origem do contato', p.contactOrigin],
+                ['Fonte', p.source],
+                ['Tabagismo', p.smoking],
+                ['Sexo SPA', p.genderSpa],
+                ['Estado civil', p.maritalStatus],
+                ['Município', p.municipality],
+                ['Região', p.region],
+                ['Status', p.status],
+                ['Tipo de atendimento', p.serviceType],
+              ].map(([label, value]) => (
+                <div key={label}>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{label}</p>
+                  <p className="mt-1 text-sm text-slate-700">{value || 'Não informado'}</p>
+                </div>
+              ))}
+            </div>
+            <h2 className="mb-5 border-t pt-6 text-lg font-bold">Resumo clínico</h2>
             <Info
               title="Queixa inicial"
               text="Ansiedade persistente, dificuldade para dormir e sensação de sobrecarga associada ao contexto profissional."
@@ -2040,6 +2097,15 @@ const Field = ({
     />
   </label>
 );
+const SelectField = ({ label, name, options }: { label: string; name: string; options: string[] }) => (
+  <label className="grid gap-1.5 text-sm font-semibold">
+    {label}
+    <select required name={name} defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+      <option value="" disabled>Selecione</option>
+      {options.map((option) => <option key={option} value={option}>{option}</option>)}
+    </select>
+  </label>
+);
 function PatientForm({
   submit,
 }: {
@@ -2047,13 +2113,39 @@ function PatientForm({
 }) {
   return (
     <form onSubmit={submit} className="grid gap-4 p-6">
-      <Field label="Nome completo" name="name" />
+      <h3 className="text-sm font-bold uppercase tracking-wide text-teal-700">Identificação do cliente</h3>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Data de nascimento" name="birth" type="date" />
-        <Field label="CPF ou RG" name="document" />
+        <Field label="Data" name="registrationDate" type="date" />
+        <Field label="Nome do solicitante" name="requesterName" />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Telefone" name="phone" />
+        <Field label="Vínculo do solicitante" name="requesterRelationship" />
+        <Field label="Telefone" name="phone" type="tel" />
+      </div>
+      <Field label="Nome do usuário (SPA)" name="name" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Data de nascimento" name="birth" type="date" />
+        <Field label="Idade" name="age" type="number" />
+      </div>
+      <Field label="Documento de identificação do usuário" name="document" />
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Origem do contato" name="contactOrigin" />
+        <Field label="Fonte" name="source" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField label="Tabagismo" name="smoking" options={['Não', 'Sim', 'Ex-tabagista', 'Não informado']} />
+        <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Estado civil" name="maritalStatus" />
+        <Field label="Município" name="municipality" />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Field label="Região" name="region" />
+        <SelectField label="Status do atendimento" name="status" options={['Novo cadastro', 'Aguardando atendimento', 'Em acompanhamento', 'Pausado', 'Encerrado']} />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <SelectField label="Tipo de atendimento" name="serviceType" options={['Presencial', 'Online', 'Híbrido', 'Não definido']} />
         <Field label="E-mail" name="email" type="email" />
       </div>
       <Submit label="Cadastrar paciente" />
