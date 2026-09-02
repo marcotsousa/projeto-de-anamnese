@@ -200,6 +200,15 @@ const nav = [
   ['Relatórios', FileText],
 ] as const;
 
+const normalizeMunicipality = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[’']/g, '')
+  .replace(/-/g, ' ')
+  .replace(/\s+/g, ' ')
+  .trim()
+  .toLocaleLowerCase('pt-BR');
+
 const zonaDaMataMunicipalities = new Set([
   'Paiva', 'Pedro Teixeira', 'Pequeri', 'Piau', 'Rio Novo', 'Rio Preto',
   'Rochedo de Minas', 'Santa Bárbara do Monte Verde', 'Santa Rita do Ibitipoca',
@@ -208,7 +217,7 @@ const zonaDaMataMunicipalities = new Set([
   'Argirita', 'Cataguases', 'Dona Eusébia', "Estrela-d'Alva", 'Estrela Dalva',
   'Itamarati de Minas', 'Laranjal', 'Leopoldina', 'Palma', 'Pirapetinga',
   'Recreio', 'Santana de Cataguases', 'Santo Antônio do Aventureiro', 'Volta Grande',
-]);
+].map(normalizeMunicipality));
 
 function usePersistentState<T>(key: string, initialValue: T) {
   const [value, setValue] = useState(initialValue);
@@ -2468,7 +2477,7 @@ function PatientForm({
   }, [clientState]);
   const macroregion = !clientMunicipality
     ? ''
-    : clientState === 'MG' && zonaDaMataMunicipalities.has(clientMunicipality)
+    : clientState.trim().toUpperCase() === 'MG' && zonaDaMataMunicipalities.has(normalizeMunicipality(clientMunicipality))
       ? 'Zona da Mata'
       : 'Outros Estados';
   return (
