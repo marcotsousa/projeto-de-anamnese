@@ -643,7 +643,7 @@ export default function ClinicApp() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-teal-500"
-              placeholder="Buscar acolhidos, avaliações..."
+              placeholder="Buscar Acolhidos, avaliações..."
             />
           </div>
           <div className="hidden items-center gap-2 lg:flex">
@@ -682,7 +682,7 @@ export default function ClinicApp() {
               className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
             >
               <Plus size={17} />
-              Novo acolhido
+              Novo Acolhido
             </button>
           )}
         </header>
@@ -736,7 +736,7 @@ export default function ClinicApp() {
         <Modal
           title={
             modal === 'patient'
-              ? 'Cadastrar acolhido'
+              ? 'Cadastrar Acolhido'
               : modal === 'session'
                 ? 'Nova atualização'
                 : 'Aplicar instrumento'
@@ -785,7 +785,7 @@ function Dashboard({
           className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:hidden"
         >
           <Plus size={17} />
-          Novo acolhido
+          Novo Acolhido
         </button>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -841,7 +841,7 @@ function Dashboard({
             ))}
             {patients.length === 0 && (
               <p className="p-8 text-center text-sm text-slate-400">
-                Nenhum acolhido cadastrado. Use “Novo acolhido” para começar.
+                Nenhum Acolhido cadastrado. Use “Novo Acolhido” para começar.
               </p>
             )}
           </div>
@@ -869,7 +869,7 @@ function Dashboard({
             <Alert
               icon={FileText}
               title="Anamnese incompleta"
-              text="Lucas Ferreira · novo acolhido"
+              text="Lucas Ferreira · novo Acolhido"
               tone="blue"
             />
           </div>
@@ -950,7 +950,7 @@ function Patients({
             className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"
           >
             <Plus size={17} />
-            Novo acolhido
+            Novo Acolhido
           </button>
         )}
       </div>
@@ -1198,7 +1198,7 @@ function PatientView({
         onClick={back}
         className="mb-4 text-sm font-medium text-slate-500"
       >
-        ← Voltar para acolhidos
+        ← Voltar para Acolhidos
       </button>
       <section className="panel overflow-hidden">
         <div className="h-24 bg-gradient-to-r from-[#164f52] to-[#2c7c78]" />
@@ -1664,7 +1664,7 @@ function AnamnesisForm({
           <p className="text-sm text-slate-500">
             {value?.updatedAt
               ? `Última atualização: ${new Date(value.updatedAt).toLocaleString('pt-BR')}`
-              : 'Preencha a entrevista inicial do acolhido'}
+              : 'Preencha a entrevista inicial do Acolhido'}
           </p>
         </div>
         <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">
@@ -1726,7 +1726,7 @@ function AnamnesisForm({
               Perguntas orientadoras da entrevista
             </h3>
             <p className="mt-1 text-xs text-slate-500">
-              Registre a resposta do acolhido com suas próprias palavras sempre
+              Registre a resposta do Acolhido com suas próprias palavras sempre
               que possível.
             </p>
           </div>
@@ -1767,7 +1767,7 @@ function AnamnesisForm({
           <LongField
             name="complaint"
             value={value?.complaint}
-            prompt="Motivo da procura, preferencialmente nas palavras do próprio acolhido ou do responsável."
+            prompt="Motivo da procura, preferencialmente nas palavras do próprio Acolhido ou do responsável."
           />
         </AnamnesisSection>
         <AnamnesisSection number="3" title="História da queixa atual">
@@ -2213,7 +2213,7 @@ function PatientForm({
       </FormSection>
 
       <div className="sticky bottom-0 -mx-5 -mb-5 flex justify-end border-t bg-white/95 px-5 py-4 backdrop-blur sm:-mx-6 sm:-mb-6 sm:px-6">
-        <Submit label="Cadastrar acolhido" />
+        <Submit label="Cadastrar Acolhido" />
       </div>
     </form>
   );
