@@ -727,6 +727,7 @@ export default function ClinicApp() {
             />
           </div>
           <div className="flex shrink-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-white" aria-label="Ajustar tamanho da fonte">
+            <span className="hidden border-r border-slate-200 px-3 text-xs font-semibold text-slate-500 xl:block">Fonte</span>
             <button type="button" onClick={() => changeFontScale(-10)} disabled={fontScale <= 80} title="Reduzir fonte" aria-label="Reduzir tamanho da fonte" className="h-10 px-3 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35">A−</button>
             <span className="hidden min-w-12 border-x border-slate-200 px-2 text-center text-xs font-semibold text-slate-500 sm:block">{fontScale}%</span>
             <button type="button" onClick={() => changeFontScale(10)} disabled={fontScale >= 130} title="Aumentar fonte" aria-label="Aumentar tamanho da fonte" className="h-10 px-3 text-base font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35">A+</button>
