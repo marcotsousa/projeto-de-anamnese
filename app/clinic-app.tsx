@@ -270,6 +270,7 @@ export default function ClinicApp() {
   const [cloudReady, setCloudReady] = useState(false);
   const [role, setRole] = useState<UserRole | null>(null);
   const [profileName, setProfileName] = useState('Profissional');
+  const [fontScale, setFontScale] = useState(100);
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
     [tab, setTab] = useState('Resumo');
@@ -294,6 +295,20 @@ export default function ClinicApp() {
     ),
     [mobile, setMobile] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const storedScale = Number(window.localStorage.getItem('projeto-anamnese:font-scale'));
+    const initialScale = storedScale >= 80 && storedScale <= 130 ? storedScale : 100;
+    setFontScale(initialScale);
+    document.documentElement.style.fontSize = `${initialScale}%`;
+  }, []);
+  const changeFontScale = (amount: number) => {
+    setFontScale((current) => {
+      const nextScale = Math.min(130, Math.max(80, current + amount));
+      document.documentElement.style.fontSize = `${nextScale}%`;
+      window.localStorage.setItem('projeto-anamnese:font-scale', String(nextScale));
+      return nextScale;
+    });
+  };
   useEffect(() => {
     if (!supabase) {
       setAuthReady(true);
@@ -710,6 +725,11 @@ export default function ClinicApp() {
               className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-teal-500"
               placeholder="Buscar Acolhidos, avaliações..."
             />
+          </div>
+          <div className="flex shrink-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-white" aria-label="Ajustar tamanho da fonte">
+            <button type="button" onClick={() => changeFontScale(-10)} disabled={fontScale <= 80} title="Reduzir fonte" aria-label="Reduzir tamanho da fonte" className="h-10 px-3 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35">A−</button>
+            <span className="hidden min-w-12 border-x border-slate-200 px-2 text-center text-xs font-semibold text-slate-500 sm:block">{fontScale}%</span>
+            <button type="button" onClick={() => changeFontScale(10)} disabled={fontScale >= 130} title="Aumentar fonte" aria-label="Aumentar tamanho da fonte" className="h-10 px-3 text-base font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35">A+</button>
           </div>
           <div className="hidden items-center gap-2 lg:flex">
             <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
