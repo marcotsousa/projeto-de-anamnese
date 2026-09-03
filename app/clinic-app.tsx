@@ -299,12 +299,11 @@ export default function ClinicApp() {
     const storedScale = Number(window.localStorage.getItem('projeto-anamnese:font-scale'));
     const initialScale = storedScale >= 80 && storedScale <= 130 ? storedScale : 100;
     setFontScale(initialScale);
-    document.documentElement.style.fontSize = `${initialScale}%`;
+    document.documentElement.style.fontSize = '100%';
   }, []);
   const changeFontScale = (amount: number) => {
     setFontScale((current) => {
       const nextScale = Math.min(130, Math.max(80, current + amount));
-      document.documentElement.style.fontSize = `${nextScale}%`;
       window.localStorage.setItem('projeto-anamnese:font-scale', String(nextScale));
       return nextScale;
     });
@@ -762,7 +761,7 @@ export default function ClinicApp() {
             Novo Acolhido
           </button>
         </header>
-        <div className="p-5 md:p-8">
+        <div className="p-5 md:p-8" style={{ zoom: fontScale / 100 }}>
           {selected && role === 'administrativo' ? (
             <ClientRegistryView p={selected} back={() => setSelected(null)} />
           ) : selected ? (
