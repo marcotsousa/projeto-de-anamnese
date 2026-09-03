@@ -741,15 +741,13 @@ export default function ClinicApp() {
             <Bell size={18} />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
-          {role !== 'administrativo' && (
-            <button
-              onClick={() => setModal('patient')}
-              className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
-            >
-              <Plus size={17} />
-              Novo Acolhido
-            </button>
-          )}
+          <button
+            onClick={() => setModal('patient')}
+            className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
+          >
+            <Plus size={17} />
+            Novo Acolhido
+          </button>
         </header>
         <div className="p-5 md:p-8">
           {selected && role === 'administrativo' ? (
@@ -782,8 +780,8 @@ export default function ClinicApp() {
               query={query}
               setQuery={setQuery}
               select={setSelected}
-              open={() => role !== 'administrativo' && setModal('patient')}
-              canCreate={role !== 'administrativo'}
+              open={() => setModal('patient')}
+              canCreate
             />
           ) : active === 'Agenda' ? (
             <Schedule patients={patients} select={setSelected} role={role} />
@@ -803,7 +801,7 @@ export default function ClinicApp() {
           )}
         </div>
       </main>
-      {modal && role !== 'administrativo' && (
+      {modal && (role !== 'administrativo' || modal === 'patient') && (
         <Modal
           title={
             modal === 'patient'
