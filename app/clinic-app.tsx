@@ -717,18 +717,7 @@ export default function ClinicApp() {
           <button className="md:hidden" onClick={() => setMobile(true)}>
             <Menu />
           </button>
-          <div className="relative max-w-md flex-1">
-            <Search
-              className="absolute left-3 top-2.5 text-slate-400"
-              size={18}
-            />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-sm outline-none focus:border-teal-500"
-              placeholder="Buscar Acolhidos, avaliações..."
-            />
-          </div>
+          <div className="flex-1" />
           <div className="flex shrink-0 items-center overflow-hidden rounded-xl border border-slate-200 bg-white" aria-label="Ajustar tamanho da fonte">
             <span className="hidden border-r border-slate-200 px-3 text-xs font-semibold text-slate-500 xl:block">Fonte</span>
             <button type="button" onClick={() => changeFontScale(-10)} disabled={fontScale <= 80} title="Reduzir fonte" aria-label="Reduzir tamanho da fonte" className="h-10 px-3 text-sm font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35">A−</button>
