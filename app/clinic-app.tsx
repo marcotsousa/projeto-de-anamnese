@@ -607,7 +607,7 @@ export default function ClinicApp() {
       ? ([['Acolhidos', Users], ['Agenda', CalendarDays]] as const)
       : role === 'administrador'
         ? ([...nav, ['Usuários', UserCog]] as const)
-        : nav;
+        : nav.filter(([label]) => label !== 'Avaliações' && label !== 'Relatórios');
   if (!authReady)
     return (
       <div className="grid min-h-screen place-items-center bg-[#eef5f2] text-sm text-teal-800">
