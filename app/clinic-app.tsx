@@ -1017,6 +1017,7 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
   const [dateFilter, setDateFilter] = useState('');
   const [professionalFilter, setProfessionalFilter] = useState('');
   const [professionalRoleFilter, setProfessionalRoleFilter] = useState('');
+  const [periodFilter, setPeriodFilter] = useState('all');
   useEffect(() => {
     let active = true;
     supabase?.auth.getSession().then(async ({ data }) => {
@@ -1037,7 +1038,11 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
   const filtered = scheduled.filter((appointment) =>
     (!dateFilter || appointment.date === dateFilter) &&
     (!professionalFilter || appointment.professionalId === professionalFilter) &&
-    (!professionalRoleFilter || appointment.professionalRole === professionalRoleFilter),
+    (!professionalRoleFilter || appointment.professionalRole === professionalRoleFilter) &&
+    (periodFilter === 'all' ||
+      (periodFilter === 'today' && appointment.date === today) ||
+      (periodFilter === 'upcoming' && appointment.date >= today) ||
+      (periodFilter === 'past' && appointment.date < today)),
   );
   const appointmentsToday = scheduled.filter((appointment) => appointment.date === today).length;
   const upcomingAppointments = scheduled.filter((appointment) => appointment.date >= today).length;
@@ -1057,7 +1062,8 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
         <div className="panel p-5"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">Próximos</p><p className="mt-2 text-3xl font-bold text-sky-700">{upcomingAppointments}</p></div>
       </div>
       <section className="panel overflow-hidden">
-        <div className="grid gap-4 border-b border-slate-100 p-5 sm:grid-cols-3">
+        <div className="grid gap-4 border-b border-slate-100 p-5 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Visualizar atendimentos<select value={periodFilter} onChange={(event) => { setPeriodFilter(event.target.value); setDateFilter(''); }} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="all">Todos os atendimentos agendados</option><option value="today">Atendimentos de hoje</option><option value="upcoming">Próximos atendimentos</option><option value="past">Atendimentos anteriores</option></select></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por data<input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500" /></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Categoria profissional<select value={professionalRoleFilter} onChange={(event) => { setProfessionalRoleFilter(event.target.value); setProfessionalFilter(''); }} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="">Psicólogos e Assistentes Sociais</option><option value="psicologo">Somente Psicólogos</option><option value="assistente_social">Somente Assistentes Sociais</option></select></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por profissional<select value={professionalFilter} onChange={(event) => setProfessionalFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="">Todos os profissionais</option>{professionalOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
