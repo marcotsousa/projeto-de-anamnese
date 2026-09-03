@@ -66,15 +66,12 @@ export async function POST(request: NextRequest) {
     council,
     availabilityStart,
     availabilityEnd,
-    activityStatus = 'active',
     businessAddress,
     municipality,
     whatsapp,
   } = await request.json();
   if (!['administrador', 'psicologo', 'assistente_social', 'administrativo'].includes(role))
     return NextResponse.json({ error: 'Perfil inválido.' }, { status: 400 });
-  if (!['active', 'suspended'].includes(activityStatus))
-    return NextResponse.json({ error: 'Situação da atividade inválida.' }, { status: 400 });
   if (['psicologo', 'assistente_social'].includes(role) &&
       (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
     return NextResponse.json(
@@ -110,12 +107,12 @@ export async function POST(request: NextRequest) {
     await admin.auth.admin.deleteUser(data.user.id);
     return NextResponse.json({ error: profileError.message }, { status: 400 });
   }
-  if (activityStatus === 'suspended') {
-    const { error: suspendError } = await admin.auth.admin.updateUserById(data.user.id, {
-      ban_duration: '876000h',
-    });
-    if (suspendError)
-      return NextResponse.json({ error: 'Usuário criado, mas não foi possível suspender a atividade.' }, { status: 400 });
+  const { error: suspendError } = await admin.auth.admin.updateUserById(data.user.id, {
+    ban_duration: '876000h',
+  });
+  if (suspendError) {
+    await admin.auth.admin.deleteUser(data.user.id);
+    return NextResponse.json({ error: 'Não foi possível deixar a conta aguardando aprovação.' }, { status: 400 });
   }
   return NextResponse.json({ ok: true });
 }
@@ -126,6 +123,8 @@ export async function PATCH(request: NextRequest) {
   const { admin } = authorization;
   const { userId, role, action } = await request.json();
   if (userId && ['block', 'unblock'].includes(action)) {
+    if (userId === authorization.requesterId && action === 'block')
+      return NextResponse.json({ error: 'Você não pode bloquear a própria conta.' }, { status: 400 });
     const { error } = await admin.auth.admin.updateUserById(userId, {
       ban_duration: action === 'block' ? '876000h' : 'none',
     });

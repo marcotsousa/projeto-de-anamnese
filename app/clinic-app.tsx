@@ -517,7 +517,10 @@ export default function ClinicApp() {
   async function login(email: string, password: string) {
     if (!supabase) return 'Configuração do Supabase ausente.';
     const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return error ? 'E-mail ou senha incorretos.' : null;
+    if (!error) return null;
+    if (error.message.toLowerCase().includes('banned'))
+      return 'Sua conta está suspensa. Aguarde o desbloqueio pelo Administrador.';
+    return 'E-mail ou senha incorretos.';
   }
   async function logout() {
     await supabase?.auth.signOut();
@@ -1392,13 +1395,9 @@ function UserManagement() {
               <option value="administrativo">Administrativo — consulta de clientes</option>
             </select>
           </label>
-          <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Situação da atividade
-            <select name="activityStatus" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="active">
-              <option value="active">Ativo — acesso liberado</option>
-              <option value="suspended">Suspenso — acesso bloqueado</option>
-            </select>
-          </label>
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            O novo usuário será criado como <b>suspenso</b>. Libere o acesso pelo botão “Desbloquear” na lista de usuários.
+          </div>
           <button className="h-11 w-full rounded-xl bg-[#176a68] font-semibold text-white">Criar usuário</button>
           {message && <p className="text-sm text-slate-500">{message}</p>}
         </form>
@@ -1413,6 +1412,7 @@ function UserManagement() {
                     <p className="truncate font-semibold">{user.fullName || 'Sem nome'}</p>
                     <p className="truncate text-xs text-slate-500">{user.jobTitle || roleLabel[user.role]} · {user.council || 'Número do conselho não informado'}</p>
                     <p className="truncate text-xs text-slate-400">{user.email} · {user.whatsapp || 'Sem WhatsApp'}</p>
+                    <p className={`mt-1 text-xs font-semibold ${user.blocked ? 'text-amber-700' : 'text-emerald-700'}`}>{user.blocked ? 'Atividade suspensa — aguardando desbloqueio' : 'Atividade liberada'}</p>
                   </div>
                   <label className="grid min-w-48 gap-1 text-xs font-semibold text-slate-500">
                     Função de acesso
@@ -1443,7 +1443,7 @@ function UserManagement() {
                       onClick={() => toggleBlock(user)}
                       className={`flex h-9 items-center justify-center gap-2 rounded-lg border px-3 text-xs font-semibold disabled:opacity-50 ${user.blocked ? 'border-emerald-200 text-emerald-700' : 'border-amber-200 text-amber-700'}`}
                     >
-                      <Ban size={15} /> {user.blocked ? 'Reativar atividade' : 'Suspender atividade'}
+                      <Ban size={15} /> {user.blocked ? 'Desbloquear' : 'Bloquear'}
                     </button>
                     <button
                       type="button"
@@ -1765,7 +1765,7 @@ function LoginScreen({
     setRegistrationRole('psicologo');
     setSelectedState('');
     form.reset();
-    setError('Conta criada com sucesso. Use seu e-mail e senha para entrar.');
+    setError('Conta criada com sucesso. Aguarde o desbloqueio pelo Administrador para entrar.');
     setLoading(false);
   }
   return (

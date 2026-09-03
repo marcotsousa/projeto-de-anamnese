@@ -67,5 +67,12 @@ export async function POST(request: NextRequest) {
     await admin.auth.admin.deleteUser(data.user.id);
     return NextResponse.json({ error: 'Não foi possível concluir o cadastro.' }, { status: 400 });
   }
+  const { error: suspendError } = await admin.auth.admin.updateUserById(data.user.id, {
+    ban_duration: '876000h',
+  });
+  if (suspendError) {
+    await admin.auth.admin.deleteUser(data.user.id);
+    return NextResponse.json({ error: 'Não foi possível deixar a conta aguardando aprovação.' }, { status: 400 });
+  }
   return NextResponse.json({ ok: true });
 }
