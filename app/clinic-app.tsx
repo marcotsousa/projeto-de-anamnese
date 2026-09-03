@@ -1493,6 +1493,7 @@ function PatientView({
   open: (m: 'session' | 'assessment') => void;
 }) {
   const tabs = ['Resumo', 'Anamnese', 'Evolução', 'Avaliações'];
+  const clinicalSummary = anamnesis?.psychosocialAnswers?.q72?.trim() ?? '';
   return (
     <div className="mx-auto max-w-7xl">
       <button
@@ -1582,18 +1583,13 @@ function PatientView({
               ))}
             </div>
             <h2 className="mb-5 border-t pt-6 text-lg font-bold">Resumo clínico</h2>
-            <Info
-              title="Queixa inicial"
-              text="Ansiedade persistente, dificuldade para dormir e sensação de sobrecarga associada ao contexto profissional."
-            />
-            <Info
-              title="Contexto"
-              text="Início dos sintomas há aproximadamente oito meses, com intensificação após mudança de cargo. Rede de apoio preservada."
-            />
-            <Info
-              title="Plano terapêutico"
-              text="TCC com foco em regulação emocional, reestruturação cognitiva, higiene do sono e exposição gradual."
-            />
+            {clinicalSummary ? (
+              <Info title="Compreensão do entrevistador sobre a pessoa" text={clinicalSummary} />
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-sm text-slate-400">
+                O resumo clínico será apresentado após a realização da anamnese e o preenchimento do campo 72.
+              </div>
+            )}
           </section>
           <section className="panel p-6">
             <h2 className="mb-5 text-lg font-bold">Contato</h2>
