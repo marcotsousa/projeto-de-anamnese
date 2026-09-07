@@ -71,6 +71,29 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ appointmentId, endTime });
 }
 
+export async function PATCH(request: NextRequest) {
+  const authorization = await authorize(request);
+  if (!authorization || authorization.role === 'juridico')
+    return NextResponse.json({ error: 'Sem permissão para encaminhar.' }, { status: 403 });
+  const { clientId, legalReferral } = await request.json();
+  if (!clientId || !legalReferral?.id || !/^\d{4}-\d{2}-\d{2}$/.test(legalReferral.date) || !legalReferral.reason?.trim())
+    return NextResponse.json({ error: 'Informe os motivos do encaminhamento jurídico.' }, { status: 400 });
+
+  let lookup = authorization.admin.from('clients').select('data').eq('id', String(clientId));
+  if (['psicologo', 'assistente_social'].includes(authorization.role))
+    lookup = lookup.or(`assigned_professional_id.eq.${authorization.userId},created_by.eq.${authorization.userId}`);
+  const { data: row, error: lookupError } = await lookup.maybeSingle();
+  if (lookupError || !row)
+    return NextResponse.json({ error: 'Acolhido não encontrado ou sem permissão.' }, { status: 404 });
+
+  const currentClient = row.data as Record<string, unknown>;
+  const currentReferrals = Array.isArray(currentClient.legalReferrals) ? currentClient.legalReferrals : [];
+  const updatedClient = { ...currentClient, legalReferrals: [legalReferral, ...currentReferrals] };
+  const { error } = await authorization.admin.from('clients').update({ data: updatedClient }).eq('id', String(clientId));
+  if (error) return NextResponse.json({ error: 'Não foi possível salvar o encaminhamento jurídico.' }, { status: 400 });
+  return NextResponse.json({ client: updatedClient });
+}
+
 export async function DELETE(request: NextRequest) {
   const authorization = await authorize(request);
   if (!authorization || authorization.role === 'juridico') return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });

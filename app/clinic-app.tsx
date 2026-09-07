@@ -10,6 +10,7 @@ import {
   ChevronRight,
   ClipboardCheck,
   FileText,
+  Gavel,
   Download,
   Eye,
   EyeOff,
@@ -65,6 +66,14 @@ type Patient = {
   appointmentDate?: string;
   appointmentTime?: string;
   appointmentId?: string;
+  legalReferrals?: LegalReferral[];
+};
+type LegalReferral = {
+  id: number;
+  date: string;
+  reason: string;
+  requestedBy: string;
+  status: string;
 };
 type ProfessionalOption = {
   id: string;
@@ -289,7 +298,7 @@ export default function ClinicApp() {
       Record<string, AnamnesisRecord>
     >('projeto-anamnese:anamneses', {});
   const [query, setQuery] = useState(''),
-    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | null>(
+    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | null>(
       null,
     ),
     [mobile, setMobile] = useState(false);
@@ -618,6 +627,36 @@ export default function ClinicApp() {
     close();
     setTab('Avaliações');
   }
+  async function addLegalReferral(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selected) return;
+    const form = new FormData(e.currentTarget);
+    const referral: LegalReferral = {
+      id: Date.now(),
+      date: String(form.get('date')),
+      reason: String(form.get('reason')).trim(),
+      requestedBy: profileName,
+      status: 'Pendente',
+    };
+    const { data: sessionData } = await supabase!.auth.getSession();
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({ clientId: selected.id, legalReferral: referral }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      window.alert(result.error || 'Não foi possível registrar o encaminhamento jurídico.');
+      return;
+    }
+    const updatedPatient = result.client as Patient;
+    setPatients((current) => current.map((patient) => patient.id === selected.id ? updatedPatient : patient));
+    setSelected(updatedPatient);
+    close();
+  }
   const visibleNav =
     role === 'administrativo'
       ? ([['Acolhidos', Users], ['Agenda', CalendarDays], ['Relatórios', FileText]] as const)
@@ -768,7 +807,7 @@ export default function ClinicApp() {
         </header>
         <div className="p-5 md:p-8" style={{ zoom: fontScale / 100 }}>
           {selected && (role === 'administrativo' || role === 'juridico') ? (
-            <ClientRegistryView p={selected} back={() => setSelected(null)} />
+            <ClientRegistryView p={selected} role={role} back={() => setSelected(null)} onLegalReferral={() => setModal('legalReferral')} />
           ) : selected ? (
             <PatientView
               p={selected}
@@ -797,8 +836,13 @@ export default function ClinicApp() {
               query={query}
               setQuery={setQuery}
               select={setSelected}
+              onLegalReferral={(patient) => {
+                setSelected(patient);
+                setModal('legalReferral');
+              }}
               open={() => role !== 'juridico' && setModal('patient')}
               canCreate={role !== 'juridico'}
+              canRefer={role !== 'juridico'}
             />
           ) : active === 'Agenda' ? (
             <Schedule patients={patients} select={setSelected} role={role} />
@@ -819,14 +863,16 @@ export default function ClinicApp() {
           )}
         </div>
       </main>
-      {modal && role !== 'juridico' && (role !== 'administrativo' || modal === 'patient') && (
+      {modal && role !== 'juridico' && (role !== 'administrativo' || modal === 'patient' || modal === 'legalReferral') && (
         <Modal
           title={
             modal === 'patient'
               ? 'Cadastrar Acolhido'
               : modal === 'session'
                 ? 'Nova atualização'
-                : 'Aplicar instrumento'
+                : modal === 'assessment'
+                  ? 'Aplicar instrumento'
+                  : 'Encaminhar Orientação Jurídica'
           }
           close={close}
           wide={modal === 'patient' || modal === 'assessment'}
@@ -835,6 +881,8 @@ export default function ClinicApp() {
             <PatientForm submit={addPatient} />
           ) : modal === 'session' ? (
             <SessionForm submit={addSession} />
+          ) : modal === 'legalReferral' ? (
+            <LegalReferralForm submit={addLegalReferral} patientName={selected?.name ?? ''} />
           ) : (
             <AssessmentForm submit={addAssessment} />
           )}
@@ -1193,15 +1241,19 @@ function Patients({
   query,
   setQuery,
   select,
+  onLegalReferral,
   open,
   canCreate,
+  canRefer,
 }: {
   patients: Patient[];
   query: string;
   setQuery: (s: string) => void;
   select: (p: Patient) => void;
+  onLegalReferral: (p: Patient) => void;
   open: () => void;
   canCreate: boolean;
+  canRefer: boolean;
 }) {
   return (
     <div className="mx-auto max-w-7xl">
@@ -1239,32 +1291,40 @@ function Patients({
         </div>
         <div className="grid gap-3 border-t border-slate-100 p-5 md:grid-cols-2 xl:grid-cols-3">
           {patients.map((p) => (
-            <button
-              key={p.id}
-              onClick={() => select(p)}
-              className="group flex items-center gap-4 rounded-2xl border border-slate-200 p-4 text-left hover:border-teal-300"
-            >
-              <PatientName p={p} />
-              <ChevronRight className="ml-auto text-slate-300" size={18} />
-            </button>
+            <div key={p.id} className="group rounded-2xl border border-slate-200 p-2 hover:border-teal-300">
+              <button onClick={() => select(p)} className="flex w-full min-w-0 items-center gap-4 p-2 text-left">
+                <PatientName p={p} />
+                <ChevronRight className="ml-auto text-slate-300" size={18} />
+              </button>
+              {canRefer && (
+                <button type="button" onClick={() => onLegalReferral(p)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-indigo-200 px-3 py-2 text-xs font-semibold text-indigo-700 hover:bg-indigo-50">
+                  <Gavel size={15} /> Encaminhar Orientação Jurídica
+                </button>
+              )}
+            </div>
           ))}
         </div>
       </section>
     </div>
   );
 }
-function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
+function ClientRegistryView({ p, role, back, onLegalReferral }: { p: Patient; role: UserRole; back: () => void; onLegalReferral: () => void }) {
   return (
     <div className="mx-auto max-w-4xl">
       <button onClick={back} className="mb-4 text-sm font-medium text-slate-500">
         ← Voltar para Acolhidos
       </button>
       <section className="panel p-6">
-        <div className="mb-6 flex items-center gap-4">
+        <div className="mb-6 flex flex-wrap items-center gap-4">
           <PatientName p={p} />
           <span className="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-            Somente consulta
+            {role === 'juridico' ? 'Somente consulta' : 'Cadastro e encaminhamento'}
           </span>
+          {role !== 'juridico' && (
+            <button type="button" onClick={onLegalReferral} className="flex items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white">
+              <Gavel size={17} /> Encaminhar Orientação Jurídica
+            </button>
+          )}
         </div>
         <div className="grid gap-5 border-t pt-6 sm:grid-cols-2">
           {[
@@ -1300,6 +1360,7 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
             </div>
           ))}
         </div>
+        <LegalReferralsPanel referrals={p.legalReferrals ?? []} />
       </section>
     </div>
   );
@@ -1579,7 +1640,7 @@ function PatientView({
   saveAnamnesis: (record: AnamnesisRecord) => void;
   onDelete: () => void;
   back: () => void;
-  open: (m: 'session' | 'assessment') => void;
+  open: (m: 'session' | 'assessment' | 'legalReferral') => void;
 }) {
   const tabs = ['Resumo', 'Anamnese', 'Evolução', 'Avaliações'];
   const clinicalSummary = anamnesis?.psychosocialAnswers?.q72?.trim() ?? '';
@@ -1607,6 +1668,13 @@ function PatientView({
               </p>
             </div>
             <div className="mb-1 flex flex-wrap gap-2">
+              <button
+                onClick={() => open('legalReferral')}
+                className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
+              >
+                <Gavel size={17} />
+                Encaminhar Orientação Jurídica
+              </button>
               <button
                 onClick={onDelete}
                 className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-50"
@@ -1690,6 +1758,9 @@ function PatientView({
               <ShieldCheck className="mb-2" size={20} />
               <strong>Prontuário protegido</strong>
               <p className="mt-1 text-xs">Visível somente para você.</p>
+            </div>
+            <div className="mt-6">
+              <LegalReferralsPanel referrals={p.legalReferrals ?? []} compact />
             </div>
           </section>
         </div>
@@ -2601,6 +2672,31 @@ function Info({ title, text }: { title: string; text: string }) {
     </div>
   );
 }
+function LegalReferralsPanel({ referrals, compact = false }: { referrals: LegalReferral[]; compact?: boolean }) {
+  return (
+    <div className={compact ? '' : 'mt-8 border-t pt-6'}>
+      <div className="mb-4 flex items-center gap-2">
+        <Gavel size={18} className="text-indigo-700" />
+        <h2 className="font-bold">Encaminhamentos para Orientação Jurídica</h2>
+      </div>
+      {referrals.length ? (
+        <div className="space-y-3">
+          {referrals.map((referral) => (
+            <article key={referral.id} className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold text-slate-500">{new Date(`${referral.date}T12:00:00`).toLocaleDateString('pt-BR')} · Solicitado por {referral.requestedBy}</p>
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">{referral.status}</span>
+              </div>
+              <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{referral.reason}</p>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-400">Nenhum encaminhamento jurídico registrado.</p>
+      )}
+    </div>
+  );
+}
 function Modal({
   title,
   subtitle = 'Os campos marcados são obrigatórios',
@@ -2910,6 +3006,21 @@ function SessionForm({
       <Text label="Relato / anotações" name="note" />
       <Text label="Próximos passos" name="next" />
       <Submit label="Salvar atualização" />
+    </form>
+  );
+}
+function LegalReferralForm({ submit, patientName }: { submit: (e: React.FormEvent<HTMLFormElement>) => void; patientName: string }) {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  return (
+    <form onSubmit={submit} className="grid gap-5 p-6">
+      <div className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-800">
+        <p className="font-semibold">Acolhido: {patientName}</p>
+        <p className="mt-1 text-xs">Descreva objetivamente a necessidade de atendimento pela equipe jurídica.</p>
+      </div>
+      <Field label="Data do encaminhamento" name="date" type="date" value={today} readOnly />
+      <Text label="Motivos e justificativa do atendimento jurídico" name="reason" />
+      <Submit label="Registrar encaminhamento" />
     </form>
   );
 }
