@@ -2638,6 +2638,9 @@ const Field = ({
   placeholder,
   autoComplete,
   required = true,
+  value,
+  onChange,
+  readOnly = false,
 }: {
   label: string;
   name: string;
@@ -2645,6 +2648,9 @@ const Field = ({
   placeholder?: string;
   autoComplete?: string;
   required?: boolean;
+  value?: string;
+  onChange?: React.ChangeEventHandler<HTMLInputElement>;
+  readOnly?: boolean;
 }) => (
   <label className="grid gap-1.5 text-sm font-semibold">
     {label}
@@ -2652,9 +2658,12 @@ const Field = ({
       required={required}
       name={name}
       type={type}
+      value={value}
+      onChange={onChange}
+      readOnly={readOnly}
       autoComplete={autoComplete ?? (type === 'password' ? 'new-password' : 'off')}
       placeholder={placeholder}
-      className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500"
+      className={`h-11 rounded-xl border px-3 font-normal outline-none focus:border-teal-500 ${readOnly ? 'bg-slate-50 text-slate-600' : 'bg-white'}`}
     />
   </label>
 );
@@ -2687,6 +2696,13 @@ function PatientForm({
   const [clientState, setClientState] = useState('');
   const [clientMunicipality, setClientMunicipality] = useState('');
   const [clientMunicipalities, setClientMunicipalities] = useState<string[]>([]);
+  const [requesterName, setRequesterName] = useState('');
+  const [requesterRelationship, setRequesterRelationship] = useState('');
+  const [requesterPhone, setRequesterPhone] = useState('');
+  const [requesterEmail, setRequesterEmail] = useState('');
+  const [spaName, setSpaName] = useState('');
+  const [spaPhone, setSpaPhone] = useState('');
+  const [spaEmail, setSpaEmail] = useState('');
   const [birthDate, setBirthDate] = useState('');
   const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState('');
@@ -2702,6 +2718,7 @@ function PatientForm({
     if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age--;
     return Math.max(0, age);
   })() : '';
+  const requesterIsSpaUser = requesterRelationship === 'Próprio Usuário';
   const selectedProfessional = professionals.find((professional) => professional.id === selectedProfessionalId);
   const availableTimes = (() => {
     if (!selectedProfessional?.availabilityStart || !selectedProfessional.availabilityEnd) return [];
@@ -2790,19 +2807,26 @@ function PatientForm({
         </label>
       </div>
       <FormSection number="1" title="Dados do solicitante" description="Identifique quem realizou o contato inicial.">
-        <Field label="Nome do solicitante" name="requesterName" />
+        <Field label="Nome do solicitante" name="requesterName" value={requesterName} onChange={(event) => setRequesterName(event.target.value)} />
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Vínculo do solicitante" name="requesterRelationship" />
-          <Field label="Telefone do solicitante" name="phone" type="tel" />
-          <Field label="E-mail do solicitante (opcional)" name="requesterEmail" type="email" required={false} />
+          <label className="grid gap-1.5 text-sm font-semibold">
+            Vínculo do solicitante
+            <select required name="requesterRelationship" value={requesterRelationship} onChange={(event) => setRequesterRelationship(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+              <option value="">Selecione</option>
+              {['CONJUGE', 'IRMÃO(A)', 'FILHO(A)', 'AMIGO(A)', 'AVÔ(Ó)', 'MADRASTA', 'CUNHADO(A)', 'MÃE', 'NAMORADO(A)', 'Outro', 'PADRASTO', 'PAI', 'PRIMO(A)', 'PROF. DA REDE', 'TIO(A)', 'VIZINHO(A)', 'Próprio Usuário'].map((relationship) => <option key={relationship} value={relationship}>{relationship}</option>)}
+            </select>
+          </label>
+          <Field label="Telefone do solicitante" name="phone" type="tel" value={requesterPhone} onChange={(event) => setRequesterPhone(event.target.value)} />
+          <Field label="E-mail do solicitante (opcional)" name="requesterEmail" type="email" required={false} value={requesterEmail} onChange={(event) => setRequesterEmail(event.target.value)} />
         </div>
       </FormSection>
 
       <FormSection number="2" title="Usuário SPA" description="Dados pessoais da pessoa que receberá o atendimento.">
-        <Field label="Nome do usuário (SPA)" name="name" />
+        {requesterIsSpaUser && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">Os dados do solicitante foram repetidos automaticamente para o Usuário SPA.</p>}
+        <Field label="Nome do usuário (SPA)" name="name" value={requesterIsSpaUser ? requesterName : spaName} onChange={(event) => setSpaName(event.target.value)} readOnly={requesterIsSpaUser} />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="E-mail (SPA) (opcional)" name="email" type="email" required={false} />
-          <Field label="Telefone (SPA)" name="spaPhone" type="tel" />
+          <Field label="E-mail (SPA) (opcional)" name="email" type="email" required={false} value={requesterIsSpaUser ? requesterEmail : spaEmail} onChange={(event) => setSpaEmail(event.target.value)} readOnly={requesterIsSpaUser} />
+          <Field label="Telefone (SPA)" name="spaPhone" type="tel" value={requesterIsSpaUser ? requesterPhone : spaPhone} onChange={(event) => setSpaPhone(event.target.value)} readOnly={requesterIsSpaUser} />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Documento de identificação" name="document" />
