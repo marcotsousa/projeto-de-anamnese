@@ -1181,7 +1181,7 @@ function ClientRegistryView({ p, back }: { p: Patient; back: () => void }) {
   return (
     <div className="mx-auto max-w-4xl">
       <button onClick={back} className="mb-4 text-sm font-medium text-slate-500">
-        ← Voltar para clientes
+        ← Voltar para Acolhidos
       </button>
       <section className="panel p-6">
         <div className="mb-6 flex items-center gap-4">
@@ -1380,7 +1380,7 @@ function UserManagement() {
               <option value="administrador">Administrador — acesso total</option>
               <option value="psicologo">Psicólogo — prontuários e instrumentos</option>
               <option value="assistente_social">Assistente Social — prontuários e instrumentos</option>
-              <option value="administrativo">Administrativo — consulta de clientes</option>
+              <option value="administrativo">Administrativo — consulta de Acolhidos</option>
             </select>
           </label>
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -1532,7 +1532,7 @@ function PatientView({
                 className="flex items-center gap-2 rounded-xl border border-rose-200 bg-white px-4 py-2.5 text-sm font-semibold text-rose-700 hover:bg-rose-50"
               >
                 <Trash2 size={17} />
-                Apagar cliente
+                Apagar Acolhido
               </button>
               <button
                 onClick={() => open('session')}
@@ -1559,7 +1559,7 @@ function PatientView({
       {tab === 'Resumo' && (
         <div className="mt-6 grid gap-6 xl:grid-cols-[1.4fr_.8fr]">
           <section className="panel p-6">
-            <h2 className="mb-5 text-lg font-bold">Identificação do cliente</h2>
+            <h2 className="mb-5 text-lg font-bold">Identificação do Acolhido</h2>
             <div className="mb-6 grid gap-4 sm:grid-cols-2">
               {[
                 ['Data', p.registrationDate],
