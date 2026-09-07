@@ -620,10 +620,10 @@ export default function ClinicApp() {
   }
   const visibleNav =
     role === 'administrativo'
-      ? ([['Acolhidos', Users], ['Agenda', CalendarDays]] as const)
+      ? ([['Acolhidos', Users], ['Agenda', CalendarDays], ['Relatórios', FileText]] as const)
       : role === 'administrador'
         ? ([...nav, ['Usuários', UserCog]] as const)
-        : nav.filter(([label]) => label !== 'Relatórios');
+        : nav;
   if (!authReady)
     return (
       <div className="grid min-h-screen place-items-center bg-[#eef5f2] text-sm text-teal-800">
