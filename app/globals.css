@@ -104,6 +104,28 @@ body {
   box-shadow: 0 0 0 1000px #ffffff inset !important;
 }
 
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .report-print-area,
+  .report-print-area * {
+    visibility: visible !important;
+  }
+
+  .report-print-area {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-height: 100%;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 2cm !important;
+  }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

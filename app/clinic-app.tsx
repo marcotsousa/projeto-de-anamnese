@@ -20,6 +20,7 @@ import {
   MessageCircle,
   NotebookPen,
   Plus,
+  Printer,
   Search,
   ShieldCheck,
   Sparkles,
@@ -667,7 +668,7 @@ export default function ClinicApp() {
               key={label}
               onClick={() => {
                 setActive(label);
-                if (label === 'Acolhidos') setSelected(null);
+                setSelected(null);
                 setMobile(false);
               }}
               className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${active === label ? 'bg-white/12 text-white' : 'text-teal-50/70 hover:bg-white/7'}`}
@@ -795,6 +796,8 @@ export default function ClinicApp() {
             />
           ) : active === 'Agenda' ? (
             <Schedule patients={patients} select={setSelected} role={role} />
+          ) : active === 'Relatórios' ? (
+            <ReportsPage patients={patients} sessions={sessions} profileName={profileName} />
           ) : (
             <Dashboard
               patients={patients}
@@ -1077,6 +1080,108 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
     </div>
   );
 }
+
+function ReportsPage({ patients, sessions, profileName }: { patients: Patient[]; sessions: Session[]; profileName: string }) {
+  const [reportType, setReportType] = useState<'declaration' | 'attendance'>('declaration');
+  const [patientId, setPatientId] = useState('');
+  const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().slice(0, 10));
+  const [startTime, setStartTime] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const [city, setCity] = useState('');
+  const patient = patients.find((item) => String(item.id) === patientId);
+  const patientSessions = sessions
+    .filter((session) => String(session.patientId) === patientId)
+    .sort((a, b) => String(a.isoDate ?? a.date).localeCompare(String(b.isoDate ?? b.date)));
+  const formatDate = (value: string) => value
+    ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR')
+    : '____/____/________';
+  const professional = patient?.assignedProfessionalName || profileName;
+
+  return (
+    <div className="mx-auto max-w-7xl">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Relatórios</h1>
+        <p className="mt-1 text-sm text-slate-500">Emita documentos a partir dos dados e atendimentos registrados.</p>
+      </div>
+      <div className="mb-6 grid gap-4 md:grid-cols-2">
+        <button type="button" onClick={() => setReportType('declaration')} className={`rounded-2xl border p-5 text-left transition ${reportType === 'declaration' ? 'border-teal-600 bg-teal-50 ring-1 ring-teal-600' : 'border-slate-200 bg-white hover:border-teal-300'}`}>
+          <p className="font-bold text-slate-800">Declaração de Comparecimento</p>
+          <p className="mt-1 text-sm text-slate-500">Comprova a presença do Acolhido em uma data e horário.</p>
+        </button>
+        <button type="button" onClick={() => setReportType('attendance')} className={`rounded-2xl border p-5 text-left transition ${reportType === 'attendance' ? 'border-teal-600 bg-teal-50 ring-1 ring-teal-600' : 'border-slate-200 bg-white hover:border-teal-300'}`}>
+          <p className="font-bold text-slate-800">Relatório de Atendimento</p>
+          <p className="mt-1 text-sm text-slate-500">Apresenta o número de atendimentos e suas respectivas datas.</p>
+        </button>
+      </div>
+      <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+        <section className="panel h-fit space-y-4 p-6 print:hidden">
+          <h2 className="font-bold">Dados do documento</h2>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Acolhido
+            <select value={patientId} onChange={(event) => setPatientId(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+              <option value="">Selecione o Acolhido</option>
+              {patients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+            </select>
+          </label>
+          {reportType === 'declaration' && (
+            <>
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">Data do comparecimento<input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">Horário inicial<input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+                <label className="grid gap-2 text-sm font-semibold text-slate-700">Horário final<input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+              </div>
+            </>
+          )}
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">Cidade de emissão<input value={city} onChange={(event) => setCity(event.target.value)} placeholder={patient?.municipality || 'Informe a cidade'} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <button type="button" disabled={!patient} onClick={() => window.print()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176a68] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><Printer size={17} /> Imprimir ou salvar em PDF</button>
+        </section>
+
+        <section className="report-print-area min-h-[720px] rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm sm:px-14 sm:py-14">
+          <div className="border-b border-slate-200 pb-6 text-center">
+            <div className="mx-auto mb-3 grid h-12 w-12 place-items-center rounded-xl bg-teal-50 text-teal-700"><NotebookPen size={25} /></div>
+            <p className="font-bold text-slate-900">Projeto de Anamnese</p>
+            <p className="text-xs text-slate-500">Registro de atendimento</p>
+          </div>
+          {!patient ? (
+            <div className="grid min-h-[480px] place-items-center text-center text-sm text-slate-400">Selecione um Acolhido para gerar o documento.</div>
+          ) : reportType === 'declaration' ? (
+            <div className="pt-12 text-slate-800">
+              <h2 className="text-center text-xl font-bold uppercase tracking-wide">Declaração de Comparecimento</h2>
+              <p className="mt-12 text-justify leading-8">
+                Declaramos, para os devidos fins, que <b>{patient.name}</b>{patient.document ? <>, documento de identificação <b>{patient.document}</b></> : null}, compareceu para atendimento no dia <b>{formatDate(attendanceDate)}</b>{startTime ? <> no período de <b>{startTime}</b>{endTime ? <> às <b>{endTime}</b></> : null}</> : null}.
+              </p>
+              <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
+              <div className="mx-auto mt-28 max-w-sm border-t border-slate-500 pt-3 text-center">
+                <p className="font-semibold">{professional}</p>
+                <p className="text-sm text-slate-500">Profissional responsável</p>
+              </div>
+            </div>
+          ) : (
+            <div className="pt-12 text-slate-800">
+              <h2 className="text-center text-xl font-bold uppercase tracking-wide">Relatório de Atendimento</h2>
+              <div className="mt-10 grid gap-3 rounded-xl border border-slate-200 p-5 sm:grid-cols-2">
+                <div><p className="text-xs font-bold uppercase text-slate-400">Acolhido</p><p className="mt-1 font-semibold">{patient.name}</p></div>
+                <div><p className="text-xs font-bold uppercase text-slate-400">Total de atendimentos</p><p className="mt-1 font-semibold">{patientSessions.length}</p></div>
+              </div>
+              <h3 className="mt-8 font-bold">Datas dos atendimentos</h3>
+              {patientSessions.length ? (
+                <ol className="mt-4 space-y-3">
+                  {patientSessions.map((session, index) => <li key={session.id} className="flex justify-between border-b border-slate-100 pb-3"><span>{index + 1}. {session.date}</span><span className="text-slate-500">{session.time}</span></li>)}
+                </ol>
+              ) : <p className="mt-4 rounded-xl bg-slate-50 p-5 text-sm text-slate-500">Nenhum atendimento registrado para este Acolhido.</p>}
+              <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
+              <div className="mx-auto mt-24 max-w-sm border-t border-slate-500 pt-3 text-center">
+                <p className="font-semibold">{professional}</p>
+                <p className="text-sm text-slate-500">Profissional responsável</p>
+              </div>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function Patients({
   patients,
   query,
