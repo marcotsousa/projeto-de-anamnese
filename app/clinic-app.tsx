@@ -2637,17 +2637,19 @@ const Field = ({
   type = 'text',
   placeholder,
   autoComplete,
+  required = true,
 }: {
   label: string;
   name: string;
   type?: string;
   placeholder?: string;
   autoComplete?: string;
+  required?: boolean;
 }) => (
   <label className="grid gap-1.5 text-sm font-semibold">
     {label}
     <input
-      required
+      required={required}
       name={name}
       type={type}
       autoComplete={autoComplete ?? (type === 'password' ? 'new-password' : 'off')}
@@ -2792,14 +2794,14 @@ function PatientForm({
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Vínculo do solicitante" name="requesterRelationship" />
           <Field label="Telefone do solicitante" name="phone" type="tel" />
-          <Field label="E-mail do solicitante" name="requesterEmail" type="email" />
+          <Field label="E-mail do solicitante (opcional)" name="requesterEmail" type="email" required={false} />
         </div>
       </FormSection>
 
       <FormSection number="2" title="Usuário SPA" description="Dados pessoais da pessoa que receberá o atendimento.">
         <Field label="Nome do usuário (SPA)" name="name" />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="E-mail (SPA)" name="email" type="email" />
+          <Field label="E-mail (SPA) (opcional)" name="email" type="email" required={false} />
           <Field label="Telefone (SPA)" name="spaPhone" type="tel" />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
