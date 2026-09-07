@@ -13,7 +13,6 @@ import {
   Download,
   Eye,
   EyeOff,
-  HeartPulse,
   LayoutDashboard,
   LockKeyhole,
   LogOut,
@@ -801,7 +800,6 @@ export default function ClinicApp() {
             <Dashboard
               patients={patients}
               sessions={sessions}
-              assessments={assessments.filter((assessment) => assessment.type === 'ASSIST')}
               profileName={profileName}
               select={(p) => {
                 setActive('Acolhidos');
@@ -841,7 +839,6 @@ export default function ClinicApp() {
 function Dashboard({
   patients,
   sessions,
-  assessments,
   profileName,
   select,
   open,
@@ -849,7 +846,6 @@ function Dashboard({
 }: {
   patients: Patient[];
   sessions: Session[];
-  assessments: Assessment[];
   profileName: string;
   select: (p: Patient) => void;
   open: () => void;
@@ -862,7 +858,6 @@ function Dashboard({
   const scheduledToday = patients.filter((patient) => patient.appointmentDate === todayIso);
   const sessionsToday = sessions.filter((session) => session.isoDate === todayIso).length + scheduledToday.length;
   const sessionsThisMonth = sessions.filter((session) => session.isoDate?.startsWith(monthPrefix)).length;
-  const pendingAssessments = assessments.filter((assessment) => assessment.level.toLowerCase().includes('pendente')).length;
   const todayAppointments = sessions
     .filter((session) => session.isoDate === todayIso)
     .flatMap((session) => {
@@ -888,7 +883,7 @@ function Dashboard({
           Novo Acolhido
         </button>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <Metric
           icon={Users}
           label="Acolhidos ativos"
@@ -904,13 +899,6 @@ function Dashboard({
           color="blue"
         />
         <Metric
-          icon={ClipboardCheck}
-          label="Avaliações pendentes"
-          value={String(pendingAssessments)}
-          detail={`${assessments.length} avaliação(ões) registrada(s)`}
-          color="amber"
-        />
-        <Metric
           icon={Activity}
           label="Sessões no mês"
           value={String(sessionsThisMonth)}
@@ -918,7 +906,7 @@ function Dashboard({
           color="violet"
         />
       </div>
-      <div className="mt-6 grid gap-6 xl:grid-cols-[1.45fr_.8fr]">
+      <div className="mt-6">
         <section className="panel">
           <div className="panel-head">
             <div>
@@ -953,28 +941,6 @@ function Dashboard({
                 Nenhuma sessão registrada para hoje.
               </p>
             )}
-          </div>
-        </section>
-        <section className="panel">
-          <div className="panel-head">
-            <div>
-              <h2>Atenção clínica</h2>
-              <p>Itens para acompanhar</p>
-            </div>
-          </div>
-          <div className="space-y-3 p-5">
-            <Alert
-              icon={HeartPulse}
-              title="Risco moderado no ASSIST"
-              text="Mariana Costa · álcool"
-              tone="rose"
-            />
-            <Alert
-              icon={FileText}
-              title="Anamnese incompleta"
-              text="Lucas Ferreira · novo Acolhido"
-              tone="blue"
-            />
           </div>
         </section>
       </div>
@@ -2508,34 +2474,6 @@ function Appointment({
       </span>
       <ChevronRight size={17} />
     </button>
-  );
-}
-function Alert({
-  icon: Icon,
-  title,
-  text,
-  tone,
-}: {
-  icon: any;
-  title: string;
-  text: string;
-  tone: string;
-}) {
-  const c: any = {
-    amber: 'bg-amber-50 text-amber-700',
-    rose: 'bg-rose-50 text-rose-700',
-    blue: 'bg-sky-50 text-sky-700',
-  };
-  return (
-    <div className="flex gap-3 rounded-xl border p-3">
-      <div className={`grid h-9 w-9 place-items-center rounded-lg ${c[tone]}`}>
-        <Icon size={17} />
-      </div>
-      <div>
-        <p className="text-sm font-semibold">{title}</p>
-        <p className="text-xs text-slate-400">{text}</p>
-      </div>
-    </div>
   );
 }
 function Info({ title, text }: { title: string; text: string }) {
