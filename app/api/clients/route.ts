@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const authorization = await authorize(request);
-  if (!authorization)
+  if (!authorization || authorization.role === 'juridico')
     return NextResponse.json({ error: 'Sem permissão para cadastrar.' }, { status: 403 });
   const { client, professionalId, date, startTime } = await request.json();
   if (!client?.id || !client?.name?.trim() || !client?.spaPhone?.trim() || !professionalId || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime))
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   const authorization = await authorize(request);
-  if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  if (!authorization || authorization.role === 'juridico') return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
   const clientId = request.nextUrl.searchParams.get('id');
   if (!clientId) return NextResponse.json({ error: 'Acolhido não informado.' }, { status: 400 });
   let query = authorization.admin.from('clients').delete().eq('id', clientId);

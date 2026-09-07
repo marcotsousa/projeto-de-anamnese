@@ -135,7 +135,7 @@ type AnamnesisRecord = {
   psychosocialAnswers?: Record<string, string>;
   updatedAt: string;
 };
-type UserRole = 'administrador' | 'psicologo' | 'assistente_social' | 'administrativo';
+type UserRole = 'administrador' | 'psicologo' | 'assistente_social' | 'administrativo' | 'juridico';
 const initialPatients: Patient[] = [
   {
     id: 1,
@@ -349,7 +349,7 @@ export default function ClinicApp() {
         headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
       });
       if (response.ok && activeRequest) setPatients(await response.json());
-      if (role === 'administrativo') {
+      if (role === 'administrativo' || role === 'juridico') {
         if (activeRequest) {
           setAssessments([]);
           setSessions([]);
@@ -387,7 +387,7 @@ export default function ClinicApp() {
   }, [userId, role]);
 
   useEffect(() => {
-    if (!supabase || !userId || !cloudReady || role === 'administrativo') return;
+    if (!supabase || !userId || !cloudReady || role === 'administrativo' || role === 'juridico') return;
     const cloud = supabase;
     const timer = window.setTimeout(() => {
       cloud.from('user_state').upsert({
@@ -621,6 +621,8 @@ export default function ClinicApp() {
   const visibleNav =
     role === 'administrativo'
       ? ([['Acolhidos', Users], ['Agenda', CalendarDays], ['Relatórios', FileText]] as const)
+      : role === 'juridico'
+        ? ([['Acolhidos', Users], ['Agenda', CalendarDays], ['Relatórios', FileText]] as const)
       : role === 'administrador'
         ? ([...nav, ['Usuários', UserCog]] as const)
         : nav;
@@ -697,7 +699,9 @@ export default function ClinicApp() {
                     ? 'Psicólogo'
                     : role === 'assistente_social'
                       ? 'Assistente Social'
-                      : 'Administrativo'}
+                      : role === 'juridico'
+                        ? 'Jurídico'
+                        : 'Administrativo'}
               </p>
             </div>
             <button
@@ -752,16 +756,18 @@ export default function ClinicApp() {
             <Bell size={18} />
             <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
           </button>
-          <button
-            onClick={() => setModal('patient')}
-            className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
-          >
-            <Plus size={17} />
-            Novo Acolhido
-          </button>
+          {role !== 'juridico' && (
+            <button
+              onClick={() => setModal('patient')}
+              className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
+            >
+              <Plus size={17} />
+              Novo Acolhido
+            </button>
+          )}
         </header>
         <div className="p-5 md:p-8" style={{ zoom: fontScale / 100 }}>
-          {selected && role === 'administrativo' ? (
+          {selected && (role === 'administrativo' || role === 'juridico') ? (
             <ClientRegistryView p={selected} back={() => setSelected(null)} />
           ) : selected ? (
             <PatientView
@@ -791,8 +797,8 @@ export default function ClinicApp() {
               query={query}
               setQuery={setQuery}
               select={setSelected}
-              open={() => setModal('patient')}
-              canCreate
+              open={() => role !== 'juridico' && setModal('patient')}
+              canCreate={role !== 'juridico'}
             />
           ) : active === 'Agenda' ? (
             <Schedule patients={patients} select={setSelected} role={role} />
@@ -813,7 +819,7 @@ export default function ClinicApp() {
           )}
         </div>
       </main>
-      {modal && (role !== 'administrativo' || modal === 'patient') && (
+      {modal && role !== 'juridico' && (role !== 'administrativo' || modal === 'patient') && (
         <Modal
           title={
             modal === 'patient'
@@ -1408,7 +1414,7 @@ function UserManagement() {
     setSavingUserId('');
     setMessage('Usuário excluído com sucesso.');
   }
-  const roleLabel = { administrador: 'Administrador', psicologo: 'Psicólogo', assistente_social: 'Assistente Social', administrativo: 'Administrativo' };
+  const roleLabel = { administrador: 'Administrador', psicologo: 'Psicólogo', assistente_social: 'Assistente Social', administrativo: 'Administrativo', juridico: 'Jurídico' };
   return (
     <div className="mx-auto max-w-7xl">
       <div className="mb-6">
@@ -1420,17 +1426,19 @@ function UserManagement() {
           <h2 className="text-lg font-bold">Novo usuário</h2>
           <Field label="Nome completo" name="fullName" />
           <Field label="Cargo" name="jobTitle" />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm font-semibold text-slate-700">
-              Conselho Regional
-              <select required name="councilType" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="">
-                <option value="">Selecione</option>
-                <option value="CRP">CRP — Psicologia</option>
-                <option value="CRESS">CRESS — Serviço Social</option>
-              </select>
-            </label>
-            <Field label="Número do Conselho" name="council" placeholder="Digite o número e a região" />
-          </div>
+          {['psicologo', 'assistente_social'].includes(newUserRole) && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">
+                Conselho Regional
+                <select required name="councilType" className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal" defaultValue="">
+                  <option value="">Selecione</option>
+                  <option value="CRP">CRP — Psicologia</option>
+                  <option value="CRESS">CRESS — Serviço Social</option>
+                </select>
+              </label>
+              <Field label="Número do Conselho" name="council" placeholder="Digite o número e a região" />
+            </div>
+          )}
           {['psicologo', 'assistente_social'].includes(newUserRole) && (
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Horário inicial" name="availabilityStart" type="time" />
@@ -1451,6 +1459,7 @@ function UserManagement() {
               <option value="psicologo">Psicólogo — prontuários e instrumentos</option>
               <option value="assistente_social">Assistente Social — prontuários e instrumentos</option>
               <option value="administrativo">Administrativo — consulta de Acolhidos</option>
+              <option value="juridico">Jurídico — consulta, agenda e relatórios</option>
             </select>
           </label>
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
@@ -1485,6 +1494,7 @@ function UserManagement() {
                       <option value="psicologo">Psicólogo</option>
                       <option value="assistente_social">Assistente Social</option>
                       <option value="administrativo">Administrativo</option>
+                      <option value="juridico">Jurídico</option>
                     </select>
                   </label>
                   <div className="flex gap-2 sm:flex-col">
@@ -1767,7 +1777,7 @@ function LoginScreen({
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [registering, setRegistering] = useState(false);
-  const [registrationRole, setRegistrationRole] = useState<'psicologo' | 'assistente_social' | 'administrativo'>('psicologo');
+  const [registrationRole, setRegistrationRole] = useState<'psicologo' | 'assistente_social' | 'administrativo' | 'juridico'>('psicologo');
   const [selectedState, setSelectedState] = useState('');
   const [municipalities, setMunicipalities] = useState<string[]>([]);
   const [loadingMunicipalities, setLoadingMunicipalities] = useState(false);
@@ -1882,13 +1892,14 @@ function LoginScreen({
             <Field label="Nome completo" name="fullName" autoComplete="new-password" />
             <label className="grid gap-1.5 text-sm font-semibold">
               Tipo de perfil
-              <select required name="role" value={registrationRole} onChange={(event) => setRegistrationRole(event.target.value as 'psicologo' | 'assistente_social' | 'administrativo')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+              <select required name="role" value={registrationRole} onChange={(event) => setRegistrationRole(event.target.value as 'psicologo' | 'assistente_social' | 'administrativo' | 'juridico')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
                 <option value="psicologo">Psicólogo</option>
                 <option value="assistente_social">Assistente Social</option>
                 <option value="administrativo">Administrativo</option>
+                <option value="juridico">Jurídico</option>
               </select>
             </label>
-            {registrationRole !== 'administrativo' && (
+            {['psicologo', 'assistente_social'].includes(registrationRole) && (
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-1.5 text-sm font-semibold">

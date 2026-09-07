@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     municipality,
     whatsapp,
   } = await request.json();
-  if (!['administrador', 'psicologo', 'assistente_social', 'administrativo'].includes(role))
+  if (!['administrador', 'psicologo', 'assistente_social', 'administrativo', 'juridico'].includes(role))
     return NextResponse.json({ error: 'Perfil inválido.' }, { status: 400 });
   if (['psicologo', 'assistente_social'].includes(role) &&
       (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
@@ -131,7 +131,7 @@ export async function PATCH(request: NextRequest) {
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
     return NextResponse.json({ ok: true });
   }
-  if (!userId || !['administrador', 'psicologo', 'assistente_social', 'administrativo'].includes(role))
+  if (!userId || !['administrador', 'psicologo', 'assistente_social', 'administrativo', 'juridico'].includes(role))
     return NextResponse.json({ error: 'Usuário ou perfil inválido.' }, { status: 400 });
 
   const { data: currentProfile } = await admin

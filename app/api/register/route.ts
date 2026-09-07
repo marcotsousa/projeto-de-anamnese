@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   const { fullName, email, password, role = 'psicologo', jobTitle, councilType, council, availabilityStart, availabilityEnd, businessAddress, state, municipality, whatsapp } = await request.json();
   if (!fullName?.trim() || !email?.trim() || !password)
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 });
-  if (!['psicologo', 'assistente_social', 'administrativo'].includes(role))
+  if (!['psicologo', 'assistente_social', 'administrativo', 'juridico'].includes(role))
     return NextResponse.json({ error: 'Tipo de perfil inválido.' }, { status: 400 });
   if (['psicologo', 'assistente_social'].includes(role) &&
       (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     user_id: data.user.id,
     full_name: fullName.trim(),
     role,
-    job_title: jobTitle?.trim() || (role === 'psicologo' ? 'Psicólogo(a)' : role === 'assistente_social' ? 'Assistente Social' : 'Administrativo'),
+    job_title: jobTitle?.trim() || (role === 'psicologo' ? 'Psicólogo(a)' : role === 'assistente_social' ? 'Assistente Social' : role === 'juridico' ? 'Jurídico' : 'Administrativo'),
     council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS)\s*/i, '')}` : '',
     availability_start: availabilityStart || '',
     availability_end: availabilityEnd || '',

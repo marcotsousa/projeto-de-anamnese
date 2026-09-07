@@ -12,7 +12,9 @@ async function authorize(request: NextRequest) {
   const { data } = await publicClient.auth.getUser(token);
   if (!data.user) return null;
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  return { admin, userId: data.user.id };
+  const { data: profile } = await admin.from('profiles').select('role').eq('user_id', data.user.id).single();
+  if (!profile) return null;
+  return { admin, userId: data.user.id, role: profile.role as string };
 }
 
 function addHour(time: string) {
@@ -55,7 +57,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   const authorization = await authorize(request);
-  if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  if (!authorization || authorization.role === 'juridico') return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
   const { clientReference, clientName, clientPhone, professionalId, date, startTime } = await request.json();
   if (!clientReference || !clientName?.trim() || !clientPhone?.trim() || !professionalId || !/^\d{4}-\d{2}-\d{2}$/.test(date) || !/^\d{2}:\d{2}$/.test(startTime))
     return NextResponse.json({ error: 'Preencha telefone, profissional, data e horário.' }, { status: 400 });
