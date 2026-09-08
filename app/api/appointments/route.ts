@@ -64,6 +64,13 @@ export async function POST(request: NextRequest) {
   if (date < new Date().toISOString().slice(0, 10))
     return NextResponse.json({ error: 'A data do atendimento não pode estar no passado.' }, { status: 400 });
 
+  let clientQuery = authorization.admin.from('clients').select('data').eq('id', String(clientReference));
+  if (['psicologo', 'assistente_social'].includes(authorization.role))
+    clientQuery = clientQuery.or(`assigned_professional_id.eq.${authorization.userId},created_by.eq.${authorization.userId}`);
+  const { data: clientRow, error: clientError } = await clientQuery.maybeSingle();
+  if (clientError || !clientRow)
+    return NextResponse.json({ error: 'Acolhido não encontrado ou sem permissão.' }, { status: 404 });
+
   const { data: professional } = await authorization.admin
     .from('profiles')
     .select('full_name, role, availability_start, availability_end')
@@ -90,10 +97,13 @@ export async function POST(request: NextRequest) {
   if (overlap?.length)
     return NextResponse.json({ error: 'Este horário conflita com outro atendimento.' }, { status: 409 });
 
+  const storedClient = clientRow.data as Record<string, unknown>;
+  const storedClientName = String(storedClient.name || clientName).trim();
+  const storedClientPhone = String(storedClient.spaPhone || storedClient.phone || clientPhone).trim();
   const { data, error } = await authorization.admin.from('appointments').insert({
     client_reference: String(clientReference),
-    client_name: clientName.trim(),
-    client_phone: clientPhone.trim(),
+    client_name: storedClientName,
+    client_phone: storedClientPhone,
     professional_user_id: professionalId,
     professional_name: professional.full_name,
     professional_role: professional.role,
@@ -105,5 +115,28 @@ export async function POST(request: NextRequest) {
   if (error?.code === '23505')
     return NextResponse.json({ error: 'Este horário acabou de ser ocupado. Escolha outro.' }, { status: 409 });
   if (error) return NextResponse.json({ error: 'Não foi possível salvar o agendamento.' }, { status: 400 });
-  return NextResponse.json({ id: data.id, endTime });
+  const updatedClient = {
+    ...storedClient,
+    assignedProfessionalId: professionalId,
+    assignedProfessionalName: professional.full_name,
+    assignedProfessionalRole: professional.role === 'psicologo' ? 'Psicólogo' : 'Assistente Social',
+    appointmentDate: date,
+    appointmentTime: startTime,
+    appointmentId: data.id,
+  };
+  const { error: updateError } = await authorization.admin
+    .from('clients')
+    .update({ data: updatedClient, assigned_professional_id: professionalId })
+    .eq('id', String(clientReference));
+  if (updateError) {
+    await authorization.admin.from('appointments').delete().eq('id', data.id);
+    return NextResponse.json({ error: 'Não foi possível vincular o agendamento ao Acolhido.' }, { status: 400 });
+  }
+  return NextResponse.json({
+    id: data.id,
+    endTime,
+    professionalName: professional.full_name,
+    professionalRole: professional.role,
+    client: updatedClient,
+  });
 }

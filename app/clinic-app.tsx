@@ -299,7 +299,7 @@ export default function ClinicApp() {
       Record<string, AnamnesisRecord>
     >('projeto-anamnese:anamneses', {});
   const [query, setQuery] = useState(''),
-    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | null>(
+    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | 'appointment' | null>(
       null,
     ),
     [mobile, setMobile] = useState(false);
@@ -666,6 +666,36 @@ export default function ClinicApp() {
     setSelected(updatedPatient);
     close();
   }
+  async function addAppointment(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selected) return;
+    const form = new FormData(e.currentTarget);
+    const { data: sessionData } = await supabase!.auth.getSession();
+    const response = await fetch('/api/appointments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({
+        clientReference: selected.id,
+        clientName: selected.name,
+        clientPhone: selected.spaPhone || selected.phone,
+        professionalId: String(form.get('professionalId')),
+        date: String(form.get('date')),
+        startTime: String(form.get('startTime')),
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      window.alert(result.error || 'Não foi possível salvar o agendamento.');
+      return;
+    }
+    const updatedPatient = result.client as Patient;
+    setPatients((current) => current.map((patient) => patient.id === selected.id ? updatedPatient : patient));
+    setSelected(updatedPatient);
+    close();
+  }
   const visibleNav =
     role === 'administrativo'
       ? ([['Acolhidos', Users], ['Agenda', CalendarDays], ['Relatórios', FileText]] as const)
@@ -813,7 +843,7 @@ export default function ClinicApp() {
         </header>
         <div className="p-5 md:p-8" style={{ zoom: fontScale / 100 }}>
           {selected && (role === 'administrativo' || role === 'juridico') ? (
-            <ClientRegistryView p={selected} role={role} back={() => setSelected(null)} onLegalReferral={() => setModal('legalReferral')} />
+            <ClientRegistryView p={selected} role={role} back={() => setSelected(null)} onLegalReferral={() => setModal('legalReferral')} onSchedule={() => setModal('appointment')} />
           ) : selected ? (
             <PatientView
               p={selected}
@@ -846,9 +876,14 @@ export default function ClinicApp() {
                 setSelected(patient);
                 setModal('legalReferral');
               }}
+              onSchedule={(patient) => {
+                setSelected(patient);
+                setModal('appointment');
+              }}
               open={() => role !== 'juridico' && setModal('patient')}
               canCreate={role !== 'juridico'}
               canRefer={role !== 'juridico'}
+              canSchedule={role !== 'juridico'}
             />
           ) : active === 'Agenda' ? (
             <Schedule patients={patients} select={setSelected} role={role} />
@@ -870,7 +905,7 @@ export default function ClinicApp() {
           )}
         </div>
       </main>
-      {modal && role !== 'juridico' && (role !== 'administrativo' || modal === 'patient' || modal === 'legalReferral') && (
+      {modal && role !== 'juridico' && (role !== 'administrativo' || modal === 'patient' || modal === 'legalReferral' || modal === 'appointment') && (
         <Modal
           title={
             modal === 'patient'
@@ -879,7 +914,9 @@ export default function ClinicApp() {
                 ? 'Nova atualização'
                 : modal === 'assessment'
                   ? 'Aplicar instrumento'
-                  : 'Encaminhar Orientação Jurídica'
+                  : modal === 'legalReferral'
+                    ? 'Encaminhar Orientação Jurídica'
+                    : 'Agendar atendimento'
           }
           close={close}
           wide={modal === 'patient' || modal === 'assessment'}
@@ -890,6 +927,8 @@ export default function ClinicApp() {
             <SessionForm submit={addSession} />
           ) : modal === 'legalReferral' ? (
             <LegalReferralForm submit={addLegalReferral} patientName={selected?.name ?? ''} />
+          ) : modal === 'appointment' ? (
+            <AppointmentForm submit={addAppointment} patientName={selected?.name ?? ''} />
           ) : (
             <AssessmentForm submit={addAssessment} />
           )}
@@ -1268,18 +1307,22 @@ function Patients({
   setQuery,
   select,
   onLegalReferral,
+  onSchedule,
   open,
   canCreate,
   canRefer,
+  canSchedule,
 }: {
   patients: Patient[];
   query: string;
   setQuery: (s: string) => void;
   select: (p: Patient) => void;
   onLegalReferral: (p: Patient) => void;
+  onSchedule: (p: Patient) => void;
   open: () => void;
   canCreate: boolean;
   canRefer: boolean;
+  canSchedule: boolean;
 }) {
   return (
     <div className="mx-auto max-w-7xl">
@@ -1327,6 +1370,11 @@ function Patients({
                   <Gavel size={15} /> Encaminhar Orientação Jurídica
                 </button>
               )}
+              {canSchedule && (
+                <button type="button" onClick={() => onSchedule(p)} className="mt-1 flex w-full items-center justify-center gap-2 rounded-xl border border-teal-200 px-3 py-2 text-xs font-semibold text-teal-700 hover:bg-teal-50">
+                  <CalendarDays size={15} /> Agendar atendimento
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -1334,7 +1382,7 @@ function Patients({
     </div>
   );
 }
-function ClientRegistryView({ p, role, back, onLegalReferral }: { p: Patient; role: UserRole; back: () => void; onLegalReferral: () => void }) {
+function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p: Patient; role: UserRole; back: () => void; onLegalReferral: () => void; onSchedule: () => void }) {
   return (
     <div className="mx-auto max-w-4xl">
       <button onClick={back} className="mb-4 text-sm font-medium text-slate-500">
@@ -1344,12 +1392,17 @@ function ClientRegistryView({ p, role, back, onLegalReferral }: { p: Patient; ro
         <div className="mb-6 flex flex-wrap items-center gap-4">
           <PatientName p={p} />
           <span className="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-            {role === 'juridico' ? 'Somente consulta' : 'Cadastro e encaminhamento'}
+            {role === 'juridico' ? 'Somente consulta' : 'Cadastro, agenda e encaminhamento'}
           </span>
           {role !== 'juridico' && (
-            <button type="button" onClick={onLegalReferral} className="flex items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white">
-              <Gavel size={17} /> Encaminhar Orientação Jurídica
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={onSchedule} className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white">
+                <CalendarDays size={17} /> Agendar atendimento
+              </button>
+              <button type="button" onClick={onLegalReferral} className="flex items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white">
+                <Gavel size={17} /> Encaminhar Orientação Jurídica
+              </button>
+            </div>
           )}
         </div>
         <div className="grid gap-5 border-t pt-6 sm:grid-cols-2">
@@ -1667,7 +1720,7 @@ function PatientView({
   saveAnamnesis: (record: AnamnesisRecord) => void;
   onDelete: () => void;
   back: () => void;
-  open: (m: 'session' | 'assessment' | 'legalReferral') => void;
+  open: (m: 'session' | 'assessment' | 'legalReferral' | 'appointment') => void;
 }) {
   const tabs = ['Resumo', 'Anamnese', 'Evolução', 'Avaliações'];
   const clinicalSummary = anamnesis?.psychosocialAnswers?.q72?.trim() ?? '';
@@ -1695,6 +1748,13 @@ function PatientView({
               </p>
             </div>
             <div className="mb-1 flex flex-wrap gap-2">
+              <button
+                onClick={() => open('appointment')}
+                className="flex items-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+              >
+                <CalendarDays size={17} />
+                Agendar atendimento
+              </button>
               <button
                 onClick={() => open('legalReferral')}
                 className="flex items-center gap-2 rounded-xl border border-indigo-200 bg-white px-4 py-2.5 text-sm font-semibold text-indigo-700 hover:bg-indigo-50"
@@ -3047,6 +3107,107 @@ function LegalReferralForm({ submit, patientName }: { submit: (e: React.FormEven
       <Field label="Data do encaminhamento" name="date" type="date" value={today} readOnly />
       <Text label="Motivos e justificativa do atendimento jurídico" name="reason" />
       <Submit label="Registrar encaminhamento" />
+    </form>
+  );
+}
+function AppointmentForm({ submit, patientName }: { submit: (e: React.FormEvent<HTMLFormElement>) => void; patientName: string }) {
+  const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState('');
+  const [appointmentDate, setAppointmentDate] = useState('');
+  const [busyTimes, setBusyTimes] = useState<string[]>([]);
+  const [loadingProfessionals, setLoadingProfessionals] = useState(true);
+  const [loadingTimes, setLoadingTimes] = useState(false);
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const selectedProfessional = professionals.find((professional) => professional.id === selectedProfessionalId);
+  const availableTimes = (() => {
+    if (!selectedProfessional?.availabilityStart || !selectedProfessional.availabilityEnd) return [];
+    const toMinutes = (time: string) => {
+      const [hours, minutes] = time.split(':').map(Number);
+      return hours * 60 + minutes;
+    };
+    const toTime = (minutes: number) => `${String(Math.floor(minutes / 60)).padStart(2, '0')}:${String(minutes % 60).padStart(2, '0')}`;
+    const slots: string[] = [];
+    for (let time = toMinutes(selectedProfessional.availabilityStart); time + 60 <= toMinutes(selectedProfessional.availabilityEnd); time += 30) {
+      const value = toTime(time);
+      if (!busyTimes.includes(value)) slots.push(value);
+    }
+    return slots;
+  })();
+
+  useEffect(() => {
+    let active = true;
+    supabase?.auth.getSession().then(async ({ data }) => {
+      try {
+        const response = await fetch('/api/professionals', { headers: { Authorization: `Bearer ${data.session?.access_token}` } });
+        if (response.ok && active) setProfessionals(await response.json());
+      } finally {
+        if (active) setLoadingProfessionals(false);
+      }
+    });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedProfessionalId || !appointmentDate) {
+      setBusyTimes([]);
+      return;
+    }
+    let active = true;
+    setLoadingTimes(true);
+    supabase?.auth.getSession().then(async ({ data }) => {
+      try {
+        const params = new URLSearchParams({ professionalId: selectedProfessionalId, date: appointmentDate });
+        const response = await fetch(`/api/appointments?${params}`, { headers: { Authorization: `Bearer ${data.session?.access_token}` } });
+        if (response.ok && active) {
+          const appointments: AppointmentRecord[] = await response.json();
+          setBusyTimes(appointments.flatMap((appointment) => {
+            const [hours, minutes] = appointment.startTime.split(':').map(Number);
+            const previous = hours * 60 + minutes - 30;
+            return [
+              appointment.startTime,
+              previous >= 0 ? `${String(Math.floor(previous / 60)).padStart(2, '0')}:${String(previous % 60).padStart(2, '0')}` : '',
+            ];
+          }).filter(Boolean));
+        }
+      } finally {
+        if (active) setLoadingTimes(false);
+      }
+    });
+    return () => { active = false; };
+  }, [selectedProfessionalId, appointmentDate]);
+
+  return (
+    <form onSubmit={submit} className="grid gap-5 p-6">
+      <div className="rounded-xl bg-teal-50 p-4 text-sm text-teal-800">
+        <p className="font-semibold">Acolhido: {patientName}</p>
+        <p className="mt-1 text-xs">Escolha um profissional ativo, a data e um horário disponível.</p>
+      </div>
+      <label className="grid gap-1.5 text-sm font-semibold">
+        Profissional
+        <select required name="professionalId" value={selectedProfessionalId} onChange={(event) => setSelectedProfessionalId(event.target.value)} disabled={loadingProfessionals} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
+          <option value="">{loadingProfessionals ? 'Carregando profissionais…' : 'Selecione o profissional'}</option>
+          {professionals.map((professional) => <option key={professional.id} value={professional.id}>{professional.name} — {professional.role === 'psicologo' ? 'Psicólogo' : 'Assistente Social'}</option>)}
+        </select>
+      </label>
+      {selectedProfessional && (
+        <p className="rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          Disponibilidade: {selectedProfessional.availabilityStart && selectedProfessional.availabilityEnd ? `${selectedProfessional.availabilityStart} às ${selectedProfessional.availabilityEnd}` : 'horário ainda não informado'}
+        </p>
+      )}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="date" type="date" min={today} value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Horário disponível
+          <select required name="startTime" defaultValue="" key={`${selectedProfessionalId}-${appointmentDate}-${busyTimes.join(',')}`} disabled={!selectedProfessionalId || !appointmentDate || loadingTimes} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
+            <option value="">{loadingTimes ? 'Verificando horários…' : 'Selecione o horário'}</option>
+            {availableTimes.map((time) => <option key={time} value={time}>{time}–{(() => { const [hours, minutes] = time.split(':').map(Number); const total = hours * 60 + minutes + 60; return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`; })()}</option>)}
+          </select>
+        </label>
+      </div>
+      {!loadingProfessionals && professionals.length === 0 && <p className="text-sm font-medium text-amber-700">Nenhum psicólogo ou assistente social ativo está disponível.</p>}
+      {selectedProfessionalId && appointmentDate && !loadingTimes && availableTimes.length === 0 && <p className="text-sm font-medium text-amber-700">Não há horários livres para esta data. Escolha outro dia ou profissional.</p>}
+      <Submit label="Salvar agendamento" />
     </form>
   );
 }
