@@ -1513,7 +1513,7 @@ function UserManagement() {
           <h2 className="text-lg font-bold">Novo usuário</h2>
           <Field label="Nome completo" name="fullName" />
           <Field label="Cargo" name="jobTitle" />
-          {['psicologo', 'assistente_social'].includes(newUserRole) && (
+          {['psicologo', 'assistente_social', 'juridico'].includes(newUserRole) && (
             <div className="grid gap-4 sm:grid-cols-2">
               <label className="grid gap-2 text-sm font-semibold text-slate-700">
                 Conselho Regional
@@ -1521,6 +1521,7 @@ function UserManagement() {
                   <option value="">Selecione</option>
                   <option value="CRP">CRP — Psicologia</option>
                   <option value="CRESS">CRESS — Serviço Social</option>
+                  <option value="OAB">OAB — Advocacia</option>
                 </select>
               </label>
               <Field label="Número do Conselho" name="council" placeholder="Digite o número e a região" />
@@ -1996,7 +1997,7 @@ function LoginScreen({
                 <option value="juridico">Jurídico</option>
               </select>
             </label>
-            {['psicologo', 'assistente_social'].includes(registrationRole) && (
+            {['psicologo', 'assistente_social', 'juridico'].includes(registrationRole) && (
               <div className="grid gap-4">
                 <div className="grid gap-4 sm:grid-cols-2">
                   <label className="grid gap-1.5 text-sm font-semibold">
@@ -2005,6 +2006,7 @@ function LoginScreen({
                       <option value="">Selecione</option>
                       <option value="CRP">CRP — Psicologia</option>
                       <option value="CRESS">CRESS — Serviço Social</option>
+                      <option value="OAB">OAB — Advocacia</option>
                     </select>
                   </label>
                   <Field label="Número do Conselho" name="council" placeholder="Número e região" autoComplete="new-password" />

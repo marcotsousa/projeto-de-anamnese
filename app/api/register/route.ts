@@ -13,8 +13,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Nome, e-mail e senha são obrigatórios.' }, { status: 400 });
   if (!['psicologo', 'assistente_social', 'administrativo', 'juridico'].includes(role))
     return NextResponse.json({ error: 'Tipo de perfil inválido.' }, { status: 400 });
-  if (['psicologo', 'assistente_social'].includes(role) &&
-      (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
+  if (['psicologo', 'assistente_social', 'juridico'].includes(role) &&
+      (!['CRP', 'CRESS', 'OAB'].includes(councilType) || !council?.trim()))
     return NextResponse.json(
       { error: 'Selecione o Conselho Regional e informe o respectivo número.' },
       { status: 400 },
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     full_name: fullName.trim(),
     role,
     job_title: jobTitle?.trim() || (role === 'psicologo' ? 'Psicólogo(a)' : role === 'assistente_social' ? 'Assistente Social' : role === 'juridico' ? 'Jurídico' : 'Administrativo'),
-    council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS)\s*/i, '')}` : '',
+    council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS|OAB)\s*/i, '')}` : '',
     availability_start: availabilityStart || '',
     availability_end: availabilityEnd || '',
     business_address: businessAddress?.trim() || '',

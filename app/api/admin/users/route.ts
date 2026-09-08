@@ -72,8 +72,8 @@ export async function POST(request: NextRequest) {
   } = await request.json();
   if (!['administrador', 'psicologo', 'assistente_social', 'administrativo', 'juridico'].includes(role))
     return NextResponse.json({ error: 'Perfil inválido.' }, { status: 400 });
-  if (['psicologo', 'assistente_social'].includes(role) &&
-      (!['CRP', 'CRESS'].includes(councilType) || !council?.trim()))
+  if (['psicologo', 'assistente_social', 'juridico'].includes(role) &&
+      (!['CRP', 'CRESS', 'OAB'].includes(councilType) || !council?.trim()))
     return NextResponse.json(
       { error: 'Selecione o Conselho Regional e informe o respectivo número.' },
       { status: 400 },
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     full_name: fullName,
     role,
     job_title: jobTitle,
-    council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS)\s*/i, '')}` : '',
+    council: council?.trim() ? `${councilType} ${council.trim().replace(/^(CRP|CRESS|OAB)\s*/i, '')}` : '',
     availability_start: availabilityStart || '',
     availability_end: availabilityEnd || '',
     business_address: businessAddress,
