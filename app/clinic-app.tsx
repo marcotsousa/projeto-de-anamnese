@@ -1945,7 +1945,6 @@ function LoginScreen({
           </div>
           <div>
             <p className="font-bold">Projeto de Anamnese</p>
-            <p className="text-xs text-teal-100/60">Gestão clínica segura</p>
           </div>
         </div>
         <div className="relative max-w-lg">
@@ -1968,7 +1967,6 @@ function LoginScreen({
             </div>
             <div>
               <p className="font-bold text-slate-800">Projeto de Anamnese</p>
-              <p className="text-xs text-slate-500">Gestão clínica segura</p>
             </div>
           </div>
           <div className="mb-7">
