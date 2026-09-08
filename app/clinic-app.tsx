@@ -766,9 +766,6 @@ export default function ClinicApp() {
             <button type="button" onClick={() => changeFontScale(10)} disabled={fontScale >= 130} title="Aumentar fonte" aria-label="Aumentar tamanho da fonte" className="h-10 px-3 text-base font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35">A+</button>
           </div>
           <div className="hidden items-center gap-2 lg:flex">
-            <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
-              ● Salvo neste computador
-            </span>
             <button
               onClick={exportBackup}
               title="Exportar backup"
