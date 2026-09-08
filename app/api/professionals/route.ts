@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     admin.auth.admin.listUsers(),
   ]);
   if (error) return NextResponse.json({ error: 'Não foi possível carregar os profissionais.' }, { status: 400 });
+  if (request.nextUrl.searchParams.get('mode') === 'count')
+    return NextResponse.json({ count: profiles?.length ?? 0 });
 
   const suspendedIds = new Set(
     (usersData?.users ?? [])

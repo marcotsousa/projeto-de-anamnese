@@ -279,6 +279,7 @@ export default function ClinicApp() {
   const [role, setRole] = useState<UserRole | null>(null);
   const [profileName, setProfileName] = useState('Profissional');
   const [fontScale, setFontScale] = useState(100);
+  const [professionalCount, setProfessionalCount] = useState(0);
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
     [tab, setTab] = useState('Resumo');
@@ -354,8 +355,16 @@ export default function ClinicApp() {
     let activeRequest = true;
     const loadCloudData = async () => {
       const { data: sessionData } = await cloud.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const professionalsResponse = await fetch('/api/professionals?mode=count', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (professionalsResponse.ok && activeRequest) {
+        const professionalsResult = await professionalsResponse.json();
+        setProfessionalCount(Number(professionalsResult.count) || 0);
+      }
       const response = await fetch('/api/clients', {
-        headers: { Authorization: `Bearer ${sessionData.session?.access_token}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok && activeRequest) setPatients(await response.json());
       if (role === 'administrativo' || role === 'juridico') {
@@ -850,6 +859,7 @@ export default function ClinicApp() {
               patients={patients}
               sessions={sessions}
               profileName={profileName}
+              professionalCount={professionalCount}
               select={(p) => {
                 setActive('Acolhidos');
                 setSelected(p);
@@ -893,6 +903,7 @@ function Dashboard({
   patients,
   sessions,
   profileName,
+  professionalCount,
   select,
   open,
   openAgenda,
@@ -900,6 +911,7 @@ function Dashboard({
   patients: Patient[];
   sessions: Session[];
   profileName: string;
+  professionalCount: number;
   select: (p: Patient) => void;
   open: () => void;
   openAgenda: () => void;
@@ -936,7 +948,7 @@ function Dashboard({
           Novo Acolhido
         </button>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric
           icon={Users}
           label="Acolhidos ativos"
@@ -957,6 +969,13 @@ function Dashboard({
           value={String(sessionsThisMonth)}
           detail="Calculado pelos registros do mês"
           color="violet"
+        />
+        <Metric
+          icon={UserCog}
+          label="Profissionais cadastrados"
+          value={String(professionalCount)}
+          detail="Psicólogos e assistentes sociais"
+          color="amber"
         />
       </div>
       <div className="mt-6">
