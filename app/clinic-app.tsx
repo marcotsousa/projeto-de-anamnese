@@ -1142,6 +1142,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
   const [startTime, setStartTime] = useState('');
   const [endTime, setEndTime] = useState('');
   const [city, setCity] = useState('');
+  const [attendanceMode, setAttendanceMode] = useState<'Virtual' | 'Presencial' | ''>('');
   const patient = patients.find((item) => String(item.id) === patientId);
   const patientSessions = sessions
     .filter((session) => String(session.patientId) === patientId)
@@ -1177,6 +1178,14 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
               {patients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
             </select>
           </label>
+          <label className="grid gap-2 text-sm font-semibold text-slate-700">
+            Modalidade do atendimento
+            <select value={attendanceMode} onChange={(event) => setAttendanceMode(event.target.value as 'Virtual' | 'Presencial' | '')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+              <option value="">Selecione a modalidade</option>
+              <option value="Virtual">Atendimento Virtual</option>
+              <option value="Presencial">Atendimento Presencial</option>
+            </select>
+          </label>
           {reportType === 'declaration' && (
             <>
               <label className="grid gap-2 text-sm font-semibold text-slate-700">Data do comparecimento<input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
@@ -1187,7 +1196,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
             </>
           )}
           <label className="grid gap-2 text-sm font-semibold text-slate-700">Cidade de emissão<input value={city} onChange={(event) => setCity(event.target.value)} placeholder={patient?.municipality || 'Informe a cidade'} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
-          <button type="button" disabled={!patient} onClick={() => window.print()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176a68] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><Printer size={17} /> Imprimir ou salvar em PDF</button>
+          <button type="button" disabled={!patient || !attendanceMode} onClick={() => window.print()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176a68] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><Printer size={17} /> Imprimir ou salvar em PDF</button>
         </section>
 
         <section className="report-print-area min-h-[720px] rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm sm:px-14 sm:py-14">
@@ -1202,7 +1211,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
             <div className="pt-12 text-slate-800">
               <h2 className="text-center text-xl font-bold uppercase tracking-wide">Declaração de Comparecimento</h2>
               <p className="mt-12 text-justify leading-8">
-                Declaramos, para os devidos fins, que <b>{patient.name}</b>{patient.document ? <>, documento de identificação <b>{patient.document}</b></> : null}, compareceu para atendimento no dia <b>{formatDate(attendanceDate)}</b>{startTime ? <> no período de <b>{startTime}</b>{endTime ? <> às <b>{endTime}</b></> : null}</> : null}.
+                Declaramos, para os devidos fins, que <b>{patient.name}</b>{patient.document ? <>, documento de identificação <b>{patient.document}</b></> : null}, compareceu para atendimento <b>{attendanceMode ? attendanceMode.toLocaleLowerCase('pt-BR') : 'com modalidade não informada'}</b> no dia <b>{formatDate(attendanceDate)}</b>{startTime ? <> no período de <b>{startTime}</b>{endTime ? <> às <b>{endTime}</b></> : null}</> : null}.
               </p>
               <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
               <div className="mx-auto mt-28 max-w-sm border-t border-slate-500 pt-3 text-center">
@@ -1213,8 +1222,9 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
           ) : (
             <div className="pt-12 text-slate-800">
               <h2 className="text-center text-xl font-bold uppercase tracking-wide">Relatório de Atendimento</h2>
-              <div className="mt-10 grid gap-3 rounded-xl border border-slate-200 p-5 sm:grid-cols-2">
+              <div className="mt-10 grid gap-3 rounded-xl border border-slate-200 p-5 sm:grid-cols-3">
                 <div><p className="text-xs font-bold uppercase text-slate-400">Acolhido</p><p className="mt-1 font-semibold">{patient.name}</p></div>
+                <div><p className="text-xs font-bold uppercase text-slate-400">Modalidade</p><p className="mt-1 font-semibold">{attendanceMode ? `Atendimento ${attendanceMode}` : 'Não informada'}</p></div>
                 <div><p className="text-xs font-bold uppercase text-slate-400">Total de atendimentos</p><p className="mt-1 font-semibold">{patientSessions.length}</p></div>
               </div>
               <h3 className="mt-8 font-bold">Datas dos atendimentos</h3>
