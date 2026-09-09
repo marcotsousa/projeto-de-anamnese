@@ -1764,7 +1764,7 @@ function PatientView({
               {p.initials}
             </div>
             <div className="mb-1 flex-1">
-              <h1 className="text-2xl font-bold">{p.name}</h1>
+              <h1 className="text-2xl font-bold text-white">{p.name}</h1>
               <p className="text-sm text-slate-500">
                 {p.age} anos · {formatDateBR(p.birth)} · {p.document}
               </p>
