@@ -1853,7 +1853,13 @@ function PatientView({
         </div>
       )}
       {tab === 'Anamnese' && (
-        <PsychosocialAnamnesisForm patient={p} value={anamnesis} onSave={saveAnamnesis} />
+        <PsychosocialAnamnesisForm
+          patient={p}
+          value={anamnesis}
+          assistCount={assessments.length}
+          onSave={saveAnamnesis}
+          openAssist={() => open('assessment')}
+        />
       )}
       {tab === 'Evolução' && (
         <section className="panel mt-6">
@@ -2197,7 +2203,6 @@ const psychosocialSections: Array<{ title: string; description: string; question
     title: 'Uso de substâncias psicoativas', description: 'Padrão de uso, impactos, gastos e motivação para interrupção.', questions: [
       { id: 13, label: 'Substância psicoativa mais utilizada', type: 'select', options: ['Álcool', 'Anfetamina', 'Cocaína', 'Êxtase (MDMA)', 'Haxixe', 'Heroína', 'Lança-perfume', 'Crack', 'LSD', 'Cetamina', 'Maconha', 'Outra'] },
       { id: 14, label: 'Tipo de SPA', type: 'select', options: ['Lícita', 'Ilícita', 'Ambas'] },
-      { id: 15, label: 'Uso de SPA', type: 'matrix', rows: ['Cafeína', 'Álcool', 'Cigarro', 'Maconha', 'Cocaína', 'Crack', 'Alucinógenos', 'Anfetaminas', 'Opioides (heroína, morfina)', 'Cetamina', 'Maconha sintética'], columns: ['Frequentemente', 'Às vezes', 'Raramente', 'Nunca'] },
       { id: 16, label: 'Valor gasto mensalmente com consumo de SPA', type: 'select', options: ['Menos que R$ 500,00', 'Entre R$ 500,00 e R$ 1.400,00', 'Acima de R$ 1.400,00', 'Não sabe'] },
       { id: 17, label: 'Idade de início do uso de SPA', type: 'select', options: ['7 a 11 anos', '12 a 16 anos', '17 a 21 anos', 'Após 22 anos'] },
       { id: 18, label: 'Impacto do uso de SPA em sua vida', type: 'textarea' },
@@ -2275,7 +2280,19 @@ const psychosocialSections: Array<{ title: string; description: string; question
   },
 ];
 
-function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patient; value?: AnamnesisRecord; onSave: (record: AnamnesisRecord) => void }) {
+function PsychosocialAnamnesisForm({
+  patient,
+  value,
+  assistCount,
+  onSave,
+  openAssist,
+}: {
+  patient: Patient;
+  value?: AnamnesisRecord;
+  assistCount: number;
+  onSave: (record: AnamnesisRecord) => void;
+  openAssist: () => void;
+}) {
   const [saved, setSaved] = useState(false);
   const answers = value?.psychosocialAnswers ?? {};
   const defaults: Record<string, string> = {};
@@ -2296,7 +2313,7 @@ function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patien
     <form onSubmit={submit} className="panel mt-6 overflow-hidden">
       <div className="sticky top-20 z-10 border-b bg-white/95 px-6 py-5 backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">65 questões organizadas em 6 blocos clínicos</p></div>
+          <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">64 questões e instrumento ASSIST organizados em 6 blocos clínicos</p></div>
           <button className="rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white">{saved ? 'Salvo com sucesso' : 'Salvar anamnese'}</button>
         </div>
         <div className="mt-4 grid gap-3 rounded-xl bg-slate-50 p-3 sm:grid-cols-2 lg:grid-cols-5">
@@ -2321,12 +2338,29 @@ function PsychosocialAnamnesisForm({ patient, value, onSave }: { patient: Patien
             <div className="grid gap-6">
               {section.questions.map((question) => {
                 const key = `q${question.id}`;
-                return <div key={key} className="grid gap-2"><label className="text-sm font-semibold text-slate-700"><span className="mr-2 text-xs font-bold text-teal-700">{question.id}.</span>{question.label}</label>
+                return <div key={key} className="grid gap-6">
+                  <div className="grid gap-2"><label className="text-sm font-semibold text-slate-700"><span className="mr-2 text-xs font-bold text-teal-700">{question.id}.</span>{question.label}</label>
                   {question.type === 'textarea' ? <textarea name={key} defaultValue={answer(key)} rows={3} className="rounded-xl border bg-white p-3 text-sm outline-none focus:border-teal-500" />
                   : question.type === 'select' ? <select name={key} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500"><option value="">Selecione</option>{question.options?.map((option) => <option key={option}>{option}</option>)}</select>
                   : question.type === 'multi' ? <div className="grid gap-2 rounded-xl border bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3">{question.options?.map((option) => <label key={option} className="flex items-center gap-2 text-sm font-normal"><input type="checkbox" name={key} value={option} defaultChecked={answer(key).split(', ').includes(option)} className="h-4 w-4 accent-teal-700" />{option}</label>)}</div>
                   : question.type === 'matrix' ? <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[540px] text-sm"><thead className="bg-slate-50"><tr><th className="px-3 py-3 text-left">Item</th>{question.columns?.map((column) => <th key={column} className="px-3 py-3 text-center">{column}</th>)}</tr></thead><tbody>{question.rows?.map((row) => <tr key={row} className="border-t"><td className="px-3 py-3 font-medium">{row}</td>{question.columns?.map((column) => <td key={column} className="px-3 py-3 text-center"><input required type="radio" name={`${key}__${row}`} value={column} defaultChecked={answer(`${key}__${row}`) === column} className="h-4 w-4 accent-teal-700" /></td>)}</tr>)}</tbody></table></div>
                   : <input name={key} type={question.type === 'date' ? 'date' : 'text'} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500" />}
+                  </div>
+                  {question.id === 14 && (
+                    <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-5">
+                      <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+                        <div className="flex gap-3">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white text-teal-700 shadow-sm"><ClipboardCheck size={20} /></span>
+                          <div>
+                            <h4 className="font-bold text-slate-800">Instrumento ASSIST</h4>
+                            <p className="mt-1 text-sm text-slate-600">Avalie o uso de substâncias com cálculo e interpretação automáticos.</p>
+                            <p className="mt-1 text-xs font-medium text-teal-700">{assistCount} {assistCount === 1 ? 'aplicação registrada' : 'aplicações registradas'} para este Acolhido.</p>
+                          </div>
+                        </div>
+                        <button type="button" onClick={openAssist} className="shrink-0 rounded-xl bg-[#176a68] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#125755]">Preencher ASSIST</button>
+                      </div>
+                    </div>
+                  )}
                 </div>;
               })}
             </div>
