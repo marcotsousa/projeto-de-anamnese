@@ -155,8 +155,8 @@ const portugueseMonths: Record<string, string> = {
 function formatDateBR(value?: string | null) {
   const text = String(value ?? '').trim();
   if (!text) return '';
-  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  const yearFirst = text.match(/^(\d{4})[-/](\d{2})[-/](\d{2})/);
+  if (yearFirst) return `${yearFirst[3]}/${yearFirst[2]}/${yearFirst[1]}`;
   const brazilian = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
   if (brazilian) return `${brazilian[1].padStart(2, '0')}/${brazilian[2].padStart(2, '0')}/${brazilian[3]}`;
   const written = text.toLocaleLowerCase('pt-BR').replace(/\s+de\s+/g, ' ').match(/^(\d{1,2})\s+([a-zç]+)\.?\s+(\d{4})$/);
