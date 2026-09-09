@@ -144,6 +144,37 @@ type AnamnesisRecord = {
   psychosocialAnswers?: Record<string, string>;
   updatedAt: string;
 };
+
+const portugueseMonths: Record<string, string> = {
+  jan: '01', janeiro: '01', fev: '02', fevereiro: '02', mar: '03', março: '03',
+  abr: '04', abril: '04', mai: '05', maio: '05', jun: '06', junho: '06',
+  jul: '07', julho: '07', ago: '08', agosto: '08', set: '09', setembro: '09',
+  out: '10', outubro: '10', nov: '11', novembro: '11', dez: '12', dezembro: '12',
+};
+
+function formatDateBR(value?: string | null) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (iso) return `${iso[3]}/${iso[2]}/${iso[1]}`;
+  const brazilian = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (brazilian) return `${brazilian[1].padStart(2, '0')}/${brazilian[2].padStart(2, '0')}/${brazilian[3]}`;
+  const written = text.toLocaleLowerCase('pt-BR').replace(/\s+de\s+/g, ' ').match(/^(\d{1,2})\s+([a-zç]+)\.?\s+(\d{4})$/);
+  if (written && portugueseMonths[written[2]]) return `${written[1].padStart(2, '0')}/${portugueseMonths[written[2]]}/${written[3]}`;
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime())
+    ? text
+    : parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function formatDateTimeBR(value?: string | null) {
+  const text = String(value ?? '').trim();
+  if (!text) return '';
+  const parsed = new Date(text);
+  if (Number.isNaN(parsed.getTime())) return formatDateBR(text);
+  return `${parsed.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })} às ${parsed.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+}
+
 type UserRole = 'administrador' | 'psicologo' | 'assistente_social' | 'administrativo' | 'juridico';
 const initialPatients: Patient[] = [
   {
@@ -582,10 +613,7 @@ export default function ClinicApp() {
       {
         id: Date.now(),
         patientId: selected.id,
-        date: new Date(String(f.get('date')) + 'T12:00').toLocaleDateString(
-          'pt-BR',
-          { day: 'numeric', month: 'long', year: 'numeric' },
-        ),
+        date: String(f.get('date')),
         time: String(f.get('time')),
         isoDate: String(f.get('date')),
         note: String(f.get('note')),
@@ -619,11 +647,7 @@ export default function ClinicApp() {
         id: Date.now(),
         patientId: selected.id,
         type,
-        date: new Date().toLocaleDateString('pt-BR', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        }),
+        date: new Date().toISOString().slice(0, 10),
         score: assistResults.length ? assistResults.map((result) => `${result.substance}: ${result.score}`).join(' · ') : String(score),
         level,
         note: String(f.get('note')),
@@ -973,7 +997,7 @@ function Dashboard({
       <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-1 text-sm font-medium text-[#287472]">
-            {now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' })}
+            {formatDateBR(todayIso)}
           </p>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Seja Bem-Vindo, {profileName}.
@@ -1153,7 +1177,7 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
       <section className="panel overflow-hidden">
         <div className="grid gap-4 border-b border-slate-100 p-5 sm:grid-cols-2 xl:grid-cols-4">
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Visualizar atendimentos<select value={periodFilter} onChange={(event) => { setPeriodFilter(event.target.value); setDateFilter(''); }} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="all">Todos os atendimentos agendados</option><option value="today">Atendimentos de hoje</option><option value="upcoming">Próximos atendimentos</option><option value="past">Atendimentos anteriores</option></select></label>
-          <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por data<input type="date" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por data<input type="date" lang="pt-BR" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500" /></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Categoria profissional<select value={professionalRoleFilter} onChange={(event) => { setProfessionalRoleFilter(event.target.value); setProfessionalFilter(''); }} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="">Psicólogos e Assistentes Sociais</option><option value="psicologo">Somente Psicólogos</option><option value="assistente_social">Somente Assistentes Sociais</option></select></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por profissional<select value={professionalFilter} onChange={(event) => setProfessionalFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="">Todos os profissionais</option>{professionalOptions.map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select></label>
         </div>
@@ -1163,7 +1187,7 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
               const localPatient = patients.find((patient) => String(patient.id) === appointment.clientReference);
               const phoneDigits = appointment.clientPhone.replace(/\D/g, '');
               const whatsappPhone = phoneDigits.startsWith('55') ? phoneDigits : `55${phoneDigits.replace(/^0/, '')}`;
-              const formattedDate = new Date(`${appointment.date}T12:00:00`).toLocaleDateString('pt-BR');
+              const formattedDate = formatDateBR(appointment.date);
               const whatsappMessage = encodeURIComponent(`Olá, ${appointment.clientName}. Confirmamos seu atendimento em ${formattedDate}, às ${appointment.startTime}, com ${appointment.professionalName}.`);
               return (
               <div key={appointment.id} className="grid w-full gap-3 p-5 text-left hover:bg-slate-50 sm:grid-cols-[140px_1fr_1fr_auto] sm:items-center">
@@ -1202,9 +1226,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
   const patientSessions = sessions
     .filter((session) => String(session.patientId) === patientId)
     .sort((a, b) => String(a.isoDate ?? a.date).localeCompare(String(b.isoDate ?? b.date)));
-  const formatDate = (value: string) => value
-    ? new Date(`${value}T12:00:00`).toLocaleDateString('pt-BR')
-    : '____/____/________';
+  const formatDate = (value: string) => formatDateBR(value) || '__/__/____';
   const professional = patient?.assignedProfessionalName || profileName;
 
   return (
@@ -1243,7 +1265,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
           </label>
           {reportType === 'declaration' && (
             <>
-              <label className="grid gap-2 text-sm font-semibold text-slate-700">Data do comparecimento<input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+              <label className="grid gap-2 text-sm font-semibold text-slate-700">Data do comparecimento<input type="date" lang="pt-BR" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
               <div className="grid grid-cols-2 gap-3">
                 <label className="grid gap-2 text-sm font-semibold text-slate-700">Horário inicial<input type="time" value={startTime} onChange={(event) => setStartTime(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
                 <label className="grid gap-2 text-sm font-semibold text-slate-700">Horário final<input type="time" value={endTime} onChange={(event) => setEndTime(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
@@ -1285,7 +1307,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
               <h3 className="mt-8 font-bold">Datas dos atendimentos</h3>
               {patientSessions.length ? (
                 <ol className="mt-4 space-y-3">
-                  {patientSessions.map((session, index) => <li key={session.id} className="flex justify-between border-b border-slate-100 pb-3"><span>{index + 1}. {session.date}</span><span className="text-slate-500">{session.time}</span></li>)}
+                  {patientSessions.map((session, index) => <li key={session.id} className="flex justify-between border-b border-slate-100 pb-3"><span>{index + 1}. {formatDateBR(session.isoDate ?? session.date)}</span><span className="text-slate-500">{session.time}</span></li>)}
                 </ol>
               ) : <p className="mt-4 rounded-xl bg-slate-50 p-5 text-sm text-slate-500">Nenhum atendimento registrado para este Acolhido.</p>}
               <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
@@ -1407,7 +1429,7 @@ function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p:
         </div>
         <div className="grid gap-5 border-t pt-6 sm:grid-cols-2">
           {[
-            ['Data', p.registrationDate],
+            ['Data', formatDateBR(p.registrationDate)],
             ['Nome do solicitante', p.requesterName],
             ['Vínculo do solicitante', p.requesterRelationship],
             ['Telefone do solicitante', p.phone],
@@ -1415,7 +1437,7 @@ function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p:
             ['Nome do usuário (SPA)', p.name],
             ['E-mail (SPA)', p.email],
             ['Telefone (SPA)', p.spaPhone],
-            ['Data de nascimento', p.birth],
+            ['Data de nascimento', formatDateBR(p.birth)],
             ['Idade', p.age ? `${p.age} anos` : ''],
             ['Documento', p.document],
             ['Sexo SPA', p.genderSpa],
@@ -1430,7 +1452,7 @@ function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p:
             ['Tipo de atendimento', p.serviceType],
             ['Último atendimento', p.last],
             ['Profissional responsável', p.assignedProfessionalName],
-            ['Data do atendimento', p.appointmentDate ? new Date(`${p.appointmentDate}T12:00:00`).toLocaleDateString('pt-BR') : ''],
+            ['Data do atendimento', formatDateBR(p.appointmentDate)],
             ['Horário do atendimento', p.appointmentTime],
           ].map(([label, value]) => (
             <div key={label}>
@@ -1744,7 +1766,7 @@ function PatientView({
             <div className="mb-1 flex-1">
               <h1 className="text-2xl font-bold">{p.name}</h1>
               <p className="text-sm text-slate-500">
-                {p.age} anos · {p.birth} · {p.document}
+                {p.age} anos · {formatDateBR(p.birth)} · {p.document}
               </p>
             </div>
             <div className="mb-1 flex flex-wrap gap-2">
@@ -1797,7 +1819,7 @@ function PatientView({
             <h2 className="mb-5 text-lg font-bold">Identificação do Acolhido</h2>
             <div className="mb-6 grid gap-4 sm:grid-cols-2">
               {[
-                ['Data', p.registrationDate],
+                ['Data', formatDateBR(p.registrationDate)],
                 ['Solicitante', p.requesterName],
                 ['Vínculo', p.requesterRelationship],
                 ['Telefone do solicitante', p.phone],
@@ -1805,14 +1827,14 @@ function PatientView({
                 ['E-mail (SPA)', p.email],
                 ['Telefone (SPA)', p.spaPhone],
                 ['Documento', p.document],
-                ['Data de nascimento', p.birth],
+                ['Data de nascimento', formatDateBR(p.birth)],
                 ['Idade', p.age ? `${p.age} anos` : ''],
                 ['Sexo SPA', p.genderSpa],
                 ['Estado civil', p.maritalStatus],
                 ['Estado (UF)', p.stateSpa],
                 ['Município', p.municipality],
                 ['Profissional responsável', p.assignedProfessionalName],
-                ['Atendimento agendado', p.appointmentDate && p.appointmentTime ? `${new Date(`${p.appointmentDate}T12:00:00`).toLocaleDateString('pt-BR')} às ${p.appointmentTime}` : ''],
+                ['Atendimento agendado', p.appointmentDate && p.appointmentTime ? `${formatDateBR(p.appointmentDate)} às ${p.appointmentTime}` : ''],
                 ['Macrorregião', p.region],
                 ['Endereço residencial', p.residentialAddress],
                 ['Origem do contato', p.contactOrigin],
@@ -1882,7 +1904,7 @@ function PatientView({
                 className="relative border-l-2 border-teal-100 pb-8 pl-7 last:pb-0"
               >
                 <span className="absolute -left-[7px] top-1 h-3 w-3 rounded-full bg-teal-600 ring-4 ring-teal-50" />
-                <h3 className="font-bold">{s.date}</h3>
+                <h3 className="font-bold">{formatDateBR(s.isoDate ?? s.date)}</h3>
                 <p className="text-xs text-slate-400">
                   {s.time} · Sessão {sessions.length - i}
                 </p>
@@ -1917,7 +1939,7 @@ function PatientView({
               <div key={a.id} className="rounded-2xl border p-5">
                 <div className="flex justify-between">
                   <ClipboardCheck className="text-teal-700" />
-                  <span className="text-xs text-slate-400">{a.date}</span>
+                  <span className="text-xs text-slate-400">{formatDateBR(a.date)}</span>
                 </div>
                 <h3 className="mt-4 font-bold">{a.type}</h3>
                 {a.assistResults?.length ? <div className="mt-3 space-y-2">{a.assistResults.filter((result) => result.score > 0).map((result) => <div key={result.substance} className="rounded-xl bg-slate-50 p-3"><div className="flex items-center justify-between gap-2"><b className="text-sm">{result.substance}</b><span className="text-xs font-bold">{result.score}/20</span></div><p className="mt-1 text-xs font-semibold text-teal-700">{result.classification}</p><p className="mt-1 text-xs text-slate-500">{result.recommendation}</p></div>)}</div> : <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3"><b>{a.score}</b><span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">{a.level}</span></div>}
@@ -2320,7 +2342,7 @@ function PsychosocialAnamnesisForm({
           {[
             ['Nome', patient.name],
             ['Sexo', patient.genderSpa],
-            ['Data de nascimento', patient.birth],
+            ['Data de nascimento', formatDateBR(patient.birth)],
             ['Estado civil', patient.maritalStatus],
             ['Município', patient.municipality],
           ].map(([label, content]) => (
@@ -2344,7 +2366,7 @@ function PsychosocialAnamnesisForm({
                   : question.type === 'select' ? <select name={key} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500"><option value="">Selecione</option>{question.options?.map((option) => <option key={option}>{option}</option>)}</select>
                   : question.type === 'multi' ? <div className="grid gap-2 rounded-xl border bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3">{question.options?.map((option) => <label key={option} className="flex items-center gap-2 text-sm font-normal"><input type="checkbox" name={key} value={option} defaultChecked={answer(key).split(', ').includes(option)} className="h-4 w-4 accent-teal-700" />{option}</label>)}</div>
                   : question.type === 'matrix' ? <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[540px] text-sm"><thead className="bg-slate-50"><tr><th className="px-3 py-3 text-left">Item</th>{question.columns?.map((column) => <th key={column} className="px-3 py-3 text-center">{column}</th>)}</tr></thead><tbody>{question.rows?.map((row) => <tr key={row} className="border-t"><td className="px-3 py-3 font-medium">{row}</td>{question.columns?.map((column) => <td key={column} className="px-3 py-3 text-center"><input required type="radio" name={`${key}__${row}`} value={column} defaultChecked={answer(`${key}__${row}`) === column} className="h-4 w-4 accent-teal-700" /></td>)}</tr>)}</tbody></table></div>
-                  : <input name={key} type={question.type === 'date' ? 'date' : 'text'} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500" />}
+                  : <input name={key} type={question.type === 'date' ? 'date' : 'text'} lang={question.type === 'date' ? 'pt-BR' : undefined} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500" />}
                   </div>
                   {question.id === 14 && (
                     <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-5">
@@ -2421,7 +2443,7 @@ function AnamnesisForm({
           <h2 className="text-lg font-bold">Ficha de Anamnese Psicológica</h2>
           <p className="text-sm text-slate-500">
             {value?.updatedAt
-              ? `Última atualização: ${new Date(value.updatedAt).toLocaleString('pt-BR')}`
+              ? `Última atualização: ${formatDateTimeBR(value.updatedAt)}`
               : 'Preencha a entrevista inicial do Acolhido'}
           </p>
         </div>
@@ -2435,7 +2457,7 @@ function AnamnesisForm({
             <ReadOnly label="Acolhido" value={patient.name} />
             <ReadOnly
               label="Nascimento / idade"
-              value={`${patient.birth} — ${patient.age} anos`}
+              value={`${formatDateBR(patient.birth)} — ${patient.age} anos`}
             />
             <ShortField
               label="Sexo / gênero (autodeclaração)"
@@ -2639,6 +2661,7 @@ function ShortField({
       <input
         name={name}
         type={type}
+        lang={type === 'date' ? 'pt-BR' : undefined}
         defaultValue={value}
         placeholder={placeholder}
         className="h-11 rounded-xl border border-slate-200 bg-white px-3 font-normal outline-none focus:border-teal-500"
@@ -2804,7 +2827,7 @@ function LegalReferralsPanel({ referrals, compact = false }: { referrals: LegalR
           {referrals.map((referral) => (
             <article key={referral.id} className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-xs font-semibold text-slate-500">{new Date(`${referral.date}T12:00:00`).toLocaleDateString('pt-BR')} · Solicitado por {referral.requestedBy}</p>
+                <p className="text-xs font-semibold text-slate-500">{formatDateBR(referral.date)} · Solicitado por {referral.requestedBy}</p>
                 <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-700">{referral.status}</span>
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">{referral.reason}</p>
@@ -2874,6 +2897,7 @@ const Field = ({
       required={required}
       name={name}
       type={type}
+      lang={type === 'date' ? 'pt-BR' : undefined}
       value={value}
       onChange={onChange}
       readOnly={readOnly}
@@ -3019,7 +3043,7 @@ function PatientForm({
       <div className="w-full rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:max-w-xs">
         <label className="grid gap-1.5 text-sm font-semibold text-slate-700">
           Data
-          <input required name="registrationDate" type="date" defaultValue={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" />
+          <input required name="registrationDate" type="date" lang="pt-BR" defaultValue={todayValue} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" />
         </label>
       </div>
       <FormSection number="1" title="Dados do solicitante" description="Identifique quem realizou o contato inicial.">
@@ -3046,7 +3070,7 @@ function PatientForm({
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Documento de identificação" name="document" />
-          <label className="grid gap-1.5 text-sm font-semibold">Data de nascimento<input required name="birth" type="date" max={todayValue} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Data de nascimento<input required name="birth" type="date" lang="pt-BR" max={todayValue} value={birthDate} onChange={(event) => setBirthDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
           <label className="grid gap-1.5 text-sm font-semibold">Idade<input required readOnly name="age" type="number" value={calculatedAge} placeholder="Automática" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" /></label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -3089,7 +3113,7 @@ function PatientForm({
           </p>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="appointmentDate" type="date" min={todayValue} value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+          <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="appointmentDate" type="date" lang="pt-BR" min={todayValue} value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
           <label className="grid gap-1.5 text-sm font-semibold">
             Horário disponível
             <select required name="appointmentTime" defaultValue="" key={`${selectedProfessionalId}-${appointmentDate}-${busyTimes.join(',')}`} disabled={!selectedProfessionalId || !appointmentDate || slotsLoading} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
@@ -3230,7 +3254,7 @@ function AppointmentForm({ submit, patientName }: { submit: (e: React.FormEvent<
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2">
-        <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="date" type="date" min={today} value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
+        <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="date" type="date" lang="pt-BR" min={today} value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
         <label className="grid gap-1.5 text-sm font-semibold">
           Horário disponível
           <select required name="startTime" defaultValue="" key={`${selectedProfessionalId}-${appointmentDate}-${busyTimes.join(',')}`} disabled={!selectedProfessionalId || !appointmentDate || loadingTimes} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
