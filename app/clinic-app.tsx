@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { mgMesoregionEntries } from './mg-mesoregions';
 import {
@@ -7,6 +7,7 @@ import {
   Ban,
   Bell,
   CalendarDays,
+  CheckCircle2,
   ChevronRight,
   ClipboardCheck,
   FileText,
@@ -296,7 +297,15 @@ function usePersistentState<T>(key: string, initialValue: T) {
   }, [key]);
 
   useEffect(() => {
-    if (hydrated) window.localStorage.setItem(key, JSON.stringify(value));
+    if (!hydrated) return;
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(key, JSON.stringify(value));
+      } catch {
+        // O Supabase continua sendo a fonte principal se o armazenamento local estiver cheio.
+      }
+    }, 250);
+    return () => window.clearTimeout(timer);
   }, [hydrated, key, value]);
 
   return [value, setValue] as const;
@@ -387,18 +396,21 @@ export default function ClinicApp() {
     const loadCloudData = async () => {
       const { data: sessionData } = await cloud.auth.getSession();
       const token = sessionData.session?.access_token;
-      const professionalsResponse = await fetch('/api/professionals?mode=count', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const headers = { Authorization: `Bearer ${token}` };
+      const shouldLoadClinicalState = role !== 'administrativo' && role !== 'juridico';
+      const [professionalsResponse, clientsResponse, stateResult] = await Promise.all([
+        fetch('/api/professionals?mode=count', { headers }),
+        fetch('/api/clients', { headers }),
+        shouldLoadClinicalState
+          ? cloud.from('user_state').select('data').eq('user_id', userId).maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ]);
       if (professionalsResponse.ok && activeRequest) {
         const professionalsResult = await professionalsResponse.json();
         setProfessionalCount(Number(professionalsResult.count) || 0);
       }
-      const response = await fetch('/api/clients', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok && activeRequest) setPatients(await response.json());
-      if (role === 'administrativo' || role === 'juridico') {
+      if (clientsResponse.ok && activeRequest) setPatients(await clientsResponse.json());
+      if (!shouldLoadClinicalState) {
         if (activeRequest) {
           setAssessments([]);
           setSessions([]);
@@ -408,14 +420,9 @@ export default function ClinicApp() {
         }
         return;
       }
-      const { data, error } = await cloud
-        .from('user_state')
-        .select('data')
-        .eq('user_id', userId)
-        .maybeSingle();
       if (activeRequest) {
-        if (!error && data?.data) {
-          const state = data.data as {
+        if (!stateResult.error && stateResult.data?.data) {
+          const state = stateResult.data.data as {
             assessments?: Assessment[];
             sessions?: Session[];
             anamneses?: Record<string, AnamnesisRecord>;
@@ -423,7 +430,7 @@ export default function ClinicApp() {
           if (state.assessments) setAssessments(state.assessments);
           if (state.sessions) setSessions(state.sessions);
           if (state.anamneses) setAnamneses(state.anamneses);
-        } else if (!error) {
+        } else if (!stateResult.error) {
           setAssessments([]);
           setSessions([]);
           setAnamneses({});
@@ -447,8 +454,18 @@ export default function ClinicApp() {
     }, 700);
     return () => window.clearTimeout(timer);
   }, [userId, role, cloudReady, assessments, sessions, anamneses]);
-  const filtered = patients.filter((p) =>
-    p.name.toLowerCase().includes(query.toLowerCase()),
+  const filtered = useMemo(() => {
+    const normalizedQuery = query.trim().toLocaleLowerCase('pt-BR');
+    if (!normalizedQuery) return patients;
+    return patients.filter((patient) => patient.name.toLocaleLowerCase('pt-BR').includes(normalizedQuery));
+  }, [patients, query]);
+  const selectedAssessments = useMemo(
+    () => selected ? assessments.filter((assessment) => assessment.patientId === selected.id && assessment.type === 'ASSIST') : [],
+    [assessments, selected],
+  );
+  const selectedSessions = useMemo(
+    () => selected ? sessions.filter((session) => session.patientId === selected.id) : [],
+    [sessions, selected],
   );
   const close = () => setModal(null);
   function exportBackup() {
@@ -558,7 +575,11 @@ export default function ClinicApp() {
       window.alert(appointmentResult.error || 'Não foi possível salvar o agendamento.');
       return;
     }
-    setPatients((v) => [{ ...patient, appointmentId: appointmentResult.appointmentId }, ...v]);
+    const savedPatient = { ...patient, appointmentId: appointmentResult.appointmentId };
+    setPatients((v) => [savedPatient, ...v]);
+    setActive('Acolhidos');
+    setTab('Resumo');
+    setSelected(savedPatient);
     close();
   }
   async function login(email: string, password: string) {
@@ -873,10 +894,8 @@ export default function ClinicApp() {
               p={selected}
               tab={tab}
               setTab={setTab}
-              assessments={assessments.filter(
-                (a) => a.patientId === selected.id && a.type === 'ASSIST',
-              )}
-              sessions={sessions.filter((s) => s.patientId === selected.id)}
+              assessments={selectedAssessments}
+              sessions={selectedSessions}
               anamnesis={anamneses[String(selected.id)]}
               saveAnamnesis={(record) =>
                 setAnamneses((current) => ({
@@ -1746,6 +1765,15 @@ function PatientView({
 }) {
   const tabs = ['Resumo', 'Anamnese', 'Evolução', 'Avaliações'];
   const clinicalSummary = anamnesis?.psychosocialAnswers?.q72?.trim() ?? '';
+  const anamnesisStarted = Boolean(anamnesis?.psychosocialAnswers && Object.values(anamnesis.psychosocialAnswers).some((answer) => answer.trim()));
+  const workflowSteps = [
+    { label: 'Cadastro', complete: true, action: () => setTab('Resumo') },
+    { label: 'Agendamento', complete: Boolean(p.appointmentDate && p.appointmentTime && p.assignedProfessionalId), action: () => open('appointment') },
+    { label: 'Anamnese', complete: anamnesisStarted, action: () => setTab('Anamnese') },
+    { label: 'ASSIST', complete: assessments.length > 0, action: () => assessments.length ? setTab('Avaliações') : open('assessment') },
+    { label: 'Atendimento', complete: sessions.length > 0, action: () => sessions.length ? setTab('Evolução') : open('session') },
+  ];
+  const nextWorkflowStep = workflowSteps.find((step) => !step.complete);
   return (
     <div className="mx-auto max-w-7xl">
       <button
@@ -1811,6 +1839,29 @@ function PatientView({
               </button>
             ))}
           </div>
+        </div>
+      </section>
+      <section className="panel mt-4 p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="font-bold text-slate-800">Fluxo do atendimento</h2>
+            <p className="mt-1 text-xs text-slate-500">Acompanhe as etapas e acesse diretamente o próximo registro.</p>
+          </div>
+          {nextWorkflowStep ? (
+            <button type="button" onClick={nextWorkflowStep.action} className="rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white">
+              Próxima etapa: {nextWorkflowStep.label}
+            </button>
+          ) : (
+            <span className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700"><CheckCircle2 size={16} /> Fluxo completo</span>
+          )}
+        </div>
+        <div className="mt-4 grid gap-2 sm:grid-cols-5">
+          {workflowSteps.map((step, index) => (
+            <button key={step.label} type="button" onClick={step.action} className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs font-semibold transition ${step.complete ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-500 hover:border-teal-300 hover:text-teal-700'}`}>
+              {step.complete ? <CheckCircle2 size={17} className="shrink-0" /> : <span className="grid h-[17px] w-[17px] shrink-0 place-items-center rounded-full border text-[9px]">{index + 1}</span>}
+              <span><span className="block">{step.label}</span><span className="mt-0.5 block text-[10px] font-normal opacity-75">{step.complete ? 'Concluído' : 'Pendente'}</span></span>
+            </button>
+          ))}
         </div>
       </section>
       {tab === 'Resumo' && (
