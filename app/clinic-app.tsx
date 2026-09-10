@@ -177,90 +177,6 @@ function formatDateTimeBR(value?: string | null) {
 }
 
 type UserRole = 'administrador' | 'psicologo' | 'assistente_social' | 'administrativo' | 'juridico';
-const initialPatients: Patient[] = [
-  {
-    id: 1,
-    name: 'Mariana Costa',
-    initials: 'MC',
-    age: 34,
-    phone: '(11) 98765-4321',
-    email: 'mariana.costa@email.com',
-    document: '***.482.***-09',
-    birth: '12/04/1992',
-    last: 'Hoje, 09:30',
-    status: 'Em acompanhamento',
-    color: 'bg-violet-100 text-violet-700',
-  },
-  {
-    id: 2,
-    name: 'Rafael Mendes',
-    initials: 'RM',
-    age: 28,
-    phone: '(11) 99881-2045',
-    email: 'rafael.m@email.com',
-    document: '***.175.***-41',
-    birth: '05/11/1997',
-    last: '28 ago, 14:00',
-    status: 'Em acompanhamento',
-    color: 'bg-sky-100 text-sky-700',
-  },
-  {
-    id: 3,
-    name: 'Beatriz Lima',
-    initials: 'BL',
-    age: 41,
-    phone: '(11) 97754-8830',
-    email: 'bia.lima@email.com',
-    document: '***.940.***-22',
-    birth: '22/01/1985',
-    last: '25 ago, 10:30',
-    status: 'Em acompanhamento',
-    color: 'bg-amber-100 text-amber-700',
-  },
-  {
-    id: 4,
-    name: 'Lucas Ferreira',
-    initials: 'LF',
-    age: 22,
-    phone: '(11) 98812-0450',
-    email: 'lucas.f@email.com',
-    document: '***.306.***-18',
-    birth: '18/08/2004',
-    last: '20 ago, 16:00',
-    status: 'Pausado',
-    color: 'bg-emerald-100 text-emerald-700',
-  },
-];
-const initialAssessments: Assessment[] = [
-  {
-    id: 3,
-    patientId: 1,
-    type: 'ASSIST',
-    date: '29 jul 2026',
-    score: 'Álcool: 8',
-    level: 'Risco moderado',
-    note: 'Realizada intervenção breve.',
-    tone: 'amber',
-  },
-];
-const initialSessions: Session[] = [
-  {
-    id: 1,
-    patientId: 1,
-    date: '31 de agosto de 2026',
-    time: '09:30 – 10:20',
-    note: 'Acolhido relata melhora gradual do sono após implementação da rotina combinada. Trabalhamos identificação de pensamentos automáticos relacionados ao ambiente profissional.',
-    next: 'Manter diário de pensamentos e revisar estratégias de regulação emocional.',
-  },
-  {
-    id: 2,
-    patientId: 1,
-    date: '24 de agosto de 2026',
-    time: '09:30 – 10:20',
-    note: 'Exploração dos fatores que mantêm a ansiedade antecipatória. Psicoeducação sobre ciclo de evitação e reforço negativo.',
-    next: 'Iniciar exposição gradual conforme hierarquia construída em sessão.',
-  },
-];
 const nav = [
   ['Visão geral', LayoutDashboard],
   ['Acolhidos', Users],
@@ -281,36 +197,6 @@ const mgMesoregions = new Map(
   mgMesoregionEntries.map(([municipality, mesoregion]) => [normalizeMunicipality(municipality), mesoregion]),
 );
 
-function usePersistentState<T>(key: string, initialValue: T) {
-  const [value, setValue] = useState(initialValue);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(key);
-      if (stored) setValue(JSON.parse(stored) as T);
-    } catch {
-      // Mantém os dados iniciais quando um backup local estiver corrompido.
-    } finally {
-      setHydrated(true);
-    }
-  }, [key]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    const timer = window.setTimeout(() => {
-      try {
-        window.localStorage.setItem(key, JSON.stringify(value));
-      } catch {
-        // O Supabase continua sendo a fonte principal se o armazenamento local estiver cheio.
-      }
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [hydrated, key, value]);
-
-  return [value, setValue] as const;
-}
-
 export default function ClinicApp() {
   const [authenticated, setAuthenticated] = useState(false);
   const [authReady, setAuthReady] = useState(false);
@@ -323,21 +209,10 @@ export default function ClinicApp() {
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
     [tab, setTab] = useState('Resumo');
-  const [patients, setPatients] = usePersistentState(
-      'projeto-anamnese:patients',
-      initialPatients,
-    ),
-    [assessments, setAssessments] = usePersistentState(
-      'projeto-anamnese:assessments',
-      initialAssessments,
-    ),
-    [sessions, setSessions] = usePersistentState(
-      'projeto-anamnese:sessions',
-      initialSessions,
-    ),
-    [anamneses, setAnamneses] = usePersistentState<
-      Record<string, AnamnesisRecord>
-    >('projeto-anamnese:anamneses', {});
+  const [patients, setPatients] = useState<Patient[]>([]),
+    [assessments, setAssessments] = useState<Assessment[]>([]),
+    [sessions, setSessions] = useState<Session[]>([]),
+    [anamneses, setAnamneses] = useState<Record<string, AnamnesisRecord>>({});
   const [query, setQuery] = useState(''),
     [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | 'appointment' | null>(
       null,
@@ -345,6 +220,12 @@ export default function ClinicApp() {
     [mobile, setMobile] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    [
+      'projeto-anamnese:patients',
+      'projeto-anamnese:assessments',
+      'projeto-anamnese:sessions',
+      'projeto-anamnese:anamneses',
+    ].forEach((key) => window.localStorage.removeItem(key));
     const storedScale = Number(window.localStorage.getItem('projeto-anamnese:font-scale'));
     const initialScale = storedScale >= 80 && storedScale <= 130 ? storedScale : 100;
     setFontScale(initialScale);
