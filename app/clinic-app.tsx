@@ -1178,7 +1178,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
     .filter((session) => String(session.patientId) === patientId)
     .sort((a, b) => String(a.isoDate ?? a.date).localeCompare(String(b.isoDate ?? b.date)));
   const formatDate = (value: string) => formatDateBR(value) || '__/__/____';
-  const professional = patient?.assignedProfessionalName || profileName;
+  const issuingProfessional = profileName;
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -1199,6 +1199,10 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
       <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
         <section className="panel h-fit space-y-4 p-6 print:hidden">
           <h2 className="font-bold">Dados do documento</h2>
+          <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3">
+            <p className="text-xs font-bold uppercase tracking-wide text-teal-700">Emissão vinculada ao usuário logado</p>
+            <p className="mt-1 text-sm font-semibold text-slate-800">{issuingProfessional}</p>
+          </div>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Acolhido
             <select value={patientId} onChange={(event) => setPatientId(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
@@ -1243,8 +1247,8 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
               </p>
               <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
               <div className="mx-auto mt-28 max-w-sm border-t border-slate-500 pt-3 text-center">
-                <p className="font-semibold">{professional}</p>
-                <p className="text-sm text-slate-500">Profissional responsável</p>
+                <p className="font-semibold">{issuingProfessional}</p>
+                <p className="text-sm text-slate-500">Usuário responsável pela emissão</p>
               </div>
             </div>
           ) : (
@@ -1263,8 +1267,8 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
               ) : <p className="mt-4 rounded-xl bg-slate-50 p-5 text-sm text-slate-500">Nenhum atendimento registrado para este Acolhido.</p>}
               <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
               <div className="mx-auto mt-24 max-w-sm border-t border-slate-500 pt-3 text-center">
-                <p className="font-semibold">{professional}</p>
-                <p className="text-sm text-slate-500">Profissional responsável</p>
+                <p className="font-semibold">{issuingProfessional}</p>
+                <p className="text-sm text-slate-500">Usuário responsável pela emissão</p>
               </div>
             </div>
           )}
