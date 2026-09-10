@@ -50,6 +50,9 @@
 
 body {
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: #f8fbfa;
+  color: #24313d;
+  line-height: 1.55;
 }
 
 :root {
@@ -88,10 +91,61 @@ body {
 }
 
 @layer components {
-  .panel { @apply rounded-2xl border border-slate-200/80 bg-white shadow-[0_1px_2px_rgba(15,23,42,.03)]; }
-  .panel-head { @apply flex items-center justify-between border-b border-slate-100 px-5 py-4; }
-  .panel-head h2 { @apply font-bold text-slate-800; }
-  .panel-head p { @apply mt-0.5 text-xs text-slate-400; }
+  .panel { @apply rounded-3xl border border-slate-200/70 bg-white shadow-[0_8px_30px_rgba(15,23,42,.035)]; }
+  .panel-head { @apply flex items-center justify-between border-b border-slate-100/80 px-7 py-6; }
+  .panel-head h2 { @apply text-lg font-semibold text-slate-800; }
+  .panel-head p { @apply mt-1 text-sm text-slate-400; }
+}
+
+.app-shell {
+  background:
+    radial-gradient(circle at 88% 2%, rgba(204, 238, 228, 0.28), transparent 26rem),
+    #f8fbfa;
+}
+
+.app-sidebar {
+  box-shadow: 12px 0 40px rgba(15, 23, 42, 0.025);
+}
+
+.app-header {
+  box-shadow: 0 1px 0 rgba(148, 163, 184, 0.08);
+}
+
+.app-content h1 {
+  font-weight: 650;
+  letter-spacing: -0.025em;
+}
+
+.app-content input:not([type='checkbox']):not([type='radio']),
+.app-content select {
+  min-height: 3rem;
+  border-color: #e2e8f0;
+  background-color: #fff;
+}
+
+.app-content textarea {
+  min-height: 7.5rem;
+  border-color: #e2e8f0;
+  background-color: #fff;
+  line-height: 1.65;
+}
+
+.app-content input:focus,
+.app-content select:focus,
+.app-content textarea:focus {
+  border-color: #58a5a0;
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.08);
+}
+
+.app-content button,
+.app-header button,
+.app-sidebar button {
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.app-content button:active,
+.app-header button:active {
+  transform: translateY(1px);
 }
 
 .registration-form input,

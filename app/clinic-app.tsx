@@ -694,19 +694,19 @@ export default function ClinicApp() {
       </div>
     );
   return (
-    <div className="min-h-screen bg-[#f4f7f6] text-slate-800">
+    <div className="app-shell min-h-screen text-slate-800">
       <aside
-        className={`${mobile ? 'translate-x-0' : '-translate-x-full'} fixed inset-y-0 z-40 flex w-64 flex-col bg-[#123f42] text-white transition md:translate-x-0`}
+        className={`${mobile ? 'translate-x-0' : '-translate-x-full'} app-sidebar fixed inset-y-0 z-40 flex w-64 flex-col border-r border-slate-200/70 bg-white text-slate-700 transition md:translate-x-0`}
       >
-        <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-[#d9f0e8] text-[#19595a]">
+        <div className="flex h-24 items-center gap-3 border-b border-slate-100 px-6">
+          <div className="grid h-11 w-11 place-items-center rounded-2xl bg-teal-50 text-[#287472]">
             <NotebookPen size={23} />
           </div>
           <div>
-            <div className="text-sm font-bold leading-tight">
+            <div className="text-sm font-semibold leading-tight text-slate-800">
               Projeto de Anamnese
             </div>
-            <div className="text-[11px] text-teal-100/70">Nuvem segura</div>
+            <div className="mt-1 text-xs text-slate-400">Nuvem segura</div>
           </div>
           <button
             className="ml-auto md:hidden"
@@ -715,8 +715,8 @@ export default function ClinicApp() {
             <X />
           </button>
         </div>
-        <nav className="flex-1 space-y-1 p-4">
-          <p className="mb-3 px-3 text-[10px] font-bold uppercase tracking-[.16em] text-teal-100/45">
+        <nav className="flex-1 space-y-2 p-5">
+          <p className="mb-4 px-3 text-[11px] font-bold uppercase tracking-[.16em] text-teal-700/55">
             Consultório
           </p>
           {visibleNav.map(([label, Icon]) => (
@@ -727,26 +727,26 @@ export default function ClinicApp() {
                 setSelected(null);
                 setMobile(false);
               }}
-              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm ${active === label ? 'bg-white/12 text-white' : 'text-teal-50/70 hover:bg-white/7'}`}
+              className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-sm font-medium ${active === label ? 'border-teal-100 bg-teal-50 text-teal-800' : 'border-transparent text-slate-500 hover:bg-slate-50 hover:text-slate-800'}`}
             >
               <Icon size={18} />
               {label}
               {label === 'Acolhidos' && (
-                <span className="ml-auto rounded-full bg-white/10 px-2 text-xs">
+                <span className="ml-auto rounded-full bg-white px-2.5 py-0.5 text-xs text-teal-700 shadow-sm">
                   {patients.length}
                 </span>
               )}
             </button>
           ))}
         </nav>
-        <div className="border-t border-white/10 p-4">
-          <div className="flex items-center gap-3 rounded-xl bg-black/10 p-3">
+        <div className="border-t border-slate-100 p-5">
+          <div className="flex items-center gap-3 rounded-2xl bg-slate-50 p-3.5">
             <div className="grid h-9 w-9 place-items-center rounded-full bg-[#e1b893] text-sm font-bold text-[#6b4126]">
               MT
             </div>
             <div className="flex-1">
               <p className="text-sm font-semibold">{profileName}</p>
-              <p className="truncate text-xs text-teal-100/55">
+              <p className="mt-0.5 truncate text-xs text-slate-400">
                 {role === 'administrador'
                   ? 'Administrador'
                   : role === 'psicologo'
@@ -761,7 +761,7 @@ export default function ClinicApp() {
             <button
               onClick={logout}
               title="Sair"
-              className="rounded-lg p-1.5 text-white/60 hover:bg-white/10 hover:text-white"
+              className="rounded-lg p-1.5 text-slate-400 hover:bg-white hover:text-slate-700"
             >
               <LogOut size={16} />
             </button>
@@ -769,7 +769,7 @@ export default function ClinicApp() {
         </div>
       </aside>
       <main className="md:ml-64">
-        <header className="sticky top-0 z-20 flex h-20 items-center gap-4 border-b border-slate-200/80 bg-white/90 px-5 backdrop-blur md:px-8">
+        <header className="app-header sticky top-0 z-20 flex h-24 items-center gap-4 border-b border-slate-200/60 bg-white/85 px-6 backdrop-blur-xl md:px-10">
           <button className="md:hidden" onClick={() => setMobile(true)}>
             <Menu />
           </button>
@@ -817,7 +817,7 @@ export default function ClinicApp() {
             </button>
           )}
         </header>
-        <div className="p-5 md:p-8" style={{ zoom: fontScale / 100 }}>
+        <div className="app-content p-6 md:p-10 xl:p-12" style={{ zoom: fontScale / 100 }}>
           {selected && (role === 'administrativo' || role === 'juridico') ? (
             <ClientRegistryView p={selected} role={role} back={() => setSelected(null)} onLegalReferral={() => setModal('legalReferral')} onLegalAttendance={() => setModal('legalAttendance')} onSchedule={() => setModal('appointment')} />
           ) : selected ? (
@@ -966,7 +966,7 @@ function Dashboard({
           Novo Acolhido
         </button>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2">
         <Metric
           icon={Users}
           label="Acolhidos ativos"
@@ -1130,7 +1130,7 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
         <div className="panel p-5"><p className="text-xs font-bold uppercase tracking-wide text-slate-400">Próximos</p><p className="mt-2 text-3xl font-bold text-sky-700">{upcomingAppointments}</p></div>
       </div>
       <section className="panel overflow-hidden">
-        <div className="grid gap-4 border-b border-slate-100 p-5 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-6 border-b border-slate-100 p-7 sm:grid-cols-2">
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Visualizar atendimentos<select value={periodFilter} onChange={(event) => { setPeriodFilter(event.target.value); setDateFilter(''); }} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="all">Todos os atendimentos agendados</option><option value="today">Atendimentos de hoje</option><option value="upcoming">Próximos atendimentos</option><option value="past">Atendimentos anteriores</option></select></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Filtrar por data<input type="date" lang="pt-BR" value={dateFilter} onChange={(event) => setDateFilter(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500" /></label>
           <label className="grid gap-1.5 text-xs font-bold uppercase tracking-wide text-slate-500">Categoria profissional<select value={professionalRoleFilter} onChange={(event) => { setProfessionalRoleFilter(event.target.value); setProfessionalFilter(''); }} className="h-11 rounded-xl border bg-white px-3 text-sm font-normal normal-case outline-none focus:border-teal-500"><option value="">Psicólogos e Assistentes Sociais</option><option value="psicologo">Somente Psicólogos</option><option value="assistente_social">Somente Assistentes Sociais</option></select></label>
@@ -1200,7 +1200,7 @@ function ReportsPage({ patients, sessions, profileName, profileJobTitle, profile
           <p className="mt-1 text-sm text-slate-500">Apresenta o número de atendimentos e suas respectivas datas.</p>
         </button>
       </div>
-      <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
+      <div className="grid gap-8 xl:grid-cols-[380px_1fr]">
         <section className="panel h-fit space-y-4 p-6 print:hidden">
           <h2 className="font-bold">Dados do documento</h2>
           <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3">
@@ -1348,7 +1348,7 @@ function Patients({
             />
           </div>
         </div>
-        <div className="grid gap-3 border-t border-slate-100 p-5 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 border-t border-slate-100 p-7 md:grid-cols-2">
           {patients.map((p) => (
             <div key={p.id} className="group rounded-2xl border border-slate-200 p-2 hover:border-teal-300">
               <button onClick={() => select(p)} className="flex w-full min-w-0 items-center gap-4 p-2 text-left">
@@ -1817,7 +1817,7 @@ function PatientView({
             <span className="flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700"><CheckCircle2 size={16} /> Fluxo completo</span>
           )}
         </div>
-        <div className="mt-4 grid gap-2 sm:grid-cols-5">
+        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {workflowSteps.map((step, index) => (
             <button key={step.label} type="button" onClick={step.action} className={`flex items-center gap-2 rounded-xl border px-3 py-3 text-left text-xs font-semibold transition ${step.complete ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-white text-slate-500 hover:border-teal-300 hover:text-teal-700'}`}>
               {step.complete ? <CheckCircle2 size={17} className="shrink-0" /> : <span className="grid h-[17px] w-[17px] shrink-0 place-items-center rounded-full border text-[9px]">{index + 1}</span>}
@@ -2036,10 +2036,10 @@ function LoginScreen({
     setLoading(false);
   }
   return (
-    <main className="grid min-h-screen bg-[#eef5f2] lg:grid-cols-[1.05fr_.95fr]">
-      <section className="relative hidden overflow-hidden bg-[#123f42] p-12 text-white lg:flex lg:flex-col lg:justify-between">
-        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border-[60px] border-white/5" />
-        <div className="absolute -bottom-32 left-20 h-96 w-96 rounded-full bg-teal-300/5" />
+    <main className="grid min-h-screen bg-[#f8fbfa] lg:grid-cols-[1.05fr_.95fr]">
+      <section className="relative hidden overflow-hidden border-r border-teal-100/70 bg-[#edf7f3] p-14 text-slate-800 lg:flex lg:flex-col lg:justify-between">
+        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border-[60px] border-teal-600/5" />
+        <div className="absolute -bottom-32 left-20 h-96 w-96 rounded-full bg-teal-300/10" />
         <div className="relative flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d9f0e8] text-[#19595a]">
             <NotebookPen size={25} />
@@ -2049,14 +2049,14 @@ function LoginScreen({
           </div>
         </div>
         <div className="relative max-w-lg">
-          <div className="mb-7 grid h-14 w-14 place-items-center rounded-2xl bg-white/10">
+          <div className="mb-8 grid h-14 w-14 place-items-center rounded-2xl bg-white text-teal-700 shadow-sm">
             <ShieldCheck size={27} />
           </div>
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
             Registro de Entrevista/Anamnese Psicológica Online
           </h1>
         </div>
-        <p className="relative text-xs text-teal-100/45">
+        <p className="relative text-sm text-slate-500">
           Acesso protegido · Dados sincronizados com segurança
         </p>
       </section>
