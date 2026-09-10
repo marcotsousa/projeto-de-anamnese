@@ -216,6 +216,8 @@ export default function ClinicApp() {
   const [cloudReady, setCloudReady] = useState(false);
   const [role, setRole] = useState<UserRole | null>(null);
   const [profileName, setProfileName] = useState('Profissional');
+  const [profileJobTitle, setProfileJobTitle] = useState('');
+  const [profileCouncil, setProfileCouncil] = useState('');
   const [fontScale, setFontScale] = useState(100);
   const [professionalCount, setProfessionalCount] = useState(0);
   const [active, setActive] = useState('Visão geral'),
@@ -272,12 +274,14 @@ export default function ClinicApp() {
     if (!supabase || !userId) return;
     supabase
       .from('profiles')
-      .select('role, full_name')
+      .select('role, full_name, job_title, council')
       .eq('user_id', userId)
       .single()
       .then(({ data }) => {
         setRole((data?.role as UserRole) ?? 'psicologo');
         setProfileName(data?.full_name || 'Profissional');
+        setProfileJobTitle(data?.job_title || '');
+        setProfileCouncil(data?.council || '');
       });
   }, [userId]);
 
@@ -859,7 +863,7 @@ export default function ClinicApp() {
           ) : active === 'Agenda' ? (
             <Schedule patients={patients} select={setSelected} role={role} />
           ) : active === 'Relatórios' ? (
-            <ReportsPage patients={patients} sessions={sessions} profileName={profileName} />
+            <ReportsPage patients={patients} sessions={sessions} profileName={profileName} profileJobTitle={profileJobTitle} profileCouncil={profileCouncil} />
           ) : (
             <Dashboard
               patients={patients}
@@ -1165,7 +1169,7 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
   );
 }
 
-function ReportsPage({ patients, sessions, profileName }: { patients: Patient[]; sessions: Session[]; profileName: string }) {
+function ReportsPage({ patients, sessions, profileName, profileJobTitle, profileCouncil }: { patients: Patient[]; sessions: Session[]; profileName: string; profileJobTitle: string; profileCouncil: string }) {
   const [reportType, setReportType] = useState<'declaration' | 'attendance'>('declaration');
   const [patientId, setPatientId] = useState('');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().slice(0, 10));
@@ -1202,6 +1206,7 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
           <div className="rounded-xl border border-teal-100 bg-teal-50 px-4 py-3">
             <p className="text-xs font-bold uppercase tracking-wide text-teal-700">Emissão vinculada ao usuário logado</p>
             <p className="mt-1 text-sm font-semibold text-slate-800">{issuingProfessional}</p>
+            <p className="mt-1 text-xs text-slate-600">{profileJobTitle || 'Cargo não informado'}{profileCouncil ? ` · ${profileCouncil}` : ''}</p>
           </div>
           <label className="grid gap-2 text-sm font-semibold text-slate-700">
             Acolhido
@@ -1248,7 +1253,9 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
               <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
               <div className="mx-auto mt-28 max-w-sm border-t border-slate-500 pt-3 text-center">
                 <p className="font-semibold">{issuingProfessional}</p>
-                <p className="text-sm text-slate-500">Usuário responsável pela emissão</p>
+                <p className="text-sm text-slate-600">{profileJobTitle || 'Cargo não informado'}</p>
+                {profileCouncil && <p className="text-sm text-slate-600">{profileCouncil}</p>}
+                <p className="mt-1 text-xs text-slate-500">Usuário responsável pela emissão</p>
               </div>
             </div>
           ) : (
@@ -1268,7 +1275,9 @@ function ReportsPage({ patients, sessions, profileName }: { patients: Patient[];
               <p className="mt-10 text-right">{city || patient.municipality || '________________'}, {formatDate(new Date().toISOString().slice(0, 10))}.</p>
               <div className="mx-auto mt-24 max-w-sm border-t border-slate-500 pt-3 text-center">
                 <p className="font-semibold">{issuingProfessional}</p>
-                <p className="text-sm text-slate-500">Usuário responsável pela emissão</p>
+                <p className="text-sm text-slate-600">{profileJobTitle || 'Cargo não informado'}</p>
+                {profileCouncil && <p className="text-sm text-slate-600">{profileCouncil}</p>}
+                <p className="mt-1 text-xs text-slate-500">Usuário responsável pela emissão</p>
               </div>
             </div>
           )}
