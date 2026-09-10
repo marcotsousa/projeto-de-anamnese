@@ -40,7 +40,26 @@ export async function GET(request: NextRequest) {
   else if (!includeAll) query = query.gte('appointment_date', new Date().toISOString().slice(0, 10));
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: 'Não foi possível carregar a agenda.' }, { status: 400 });
-  return NextResponse.json((data ?? []).map((item) => ({
+  let visibleAppointments = data ?? [];
+  if (authorization.role === 'juridico' && visibleAppointments.length) {
+    const clientReferences = [...new Set(visibleAppointments.map((item) => String(item.client_reference)))];
+    const { data: clients, error: clientsError } = await authorization.admin
+      .from('clients')
+      .select('id, data')
+      .in('id', clientReferences);
+    if (clientsError)
+      return NextResponse.json({ error: 'Não foi possível verificar os encaminhamentos jurídicos.' }, { status: 400 });
+    const referredClients = new Set(
+      (clients ?? [])
+        .filter((row) => {
+          const client = row.data as { legalReferrals?: unknown[] } | null;
+          return Array.isArray(client?.legalReferrals) && client.legalReferrals.length > 0;
+        })
+        .map((row) => String(row.id)),
+    );
+    visibleAppointments = visibleAppointments.filter((appointment) => referredClients.has(String(appointment.client_reference)));
+  }
+  return NextResponse.json(visibleAppointments.map((item) => ({
     id: item.id,
     clientReference: item.client_reference,
     clientName: item.client_name,

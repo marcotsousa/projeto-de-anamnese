@@ -808,6 +808,7 @@ export default function ClinicApp() {
               canCreate={role !== 'juridico'}
               canRefer={role !== 'juridico'}
               canSchedule={role !== 'juridico'}
+              restrictedToReferrals={role === 'juridico'}
             />
           ) : active === 'Agenda' ? (
             <Schedule patients={patients} select={setSelected} role={role} />
@@ -1234,6 +1235,7 @@ function Patients({
   canCreate,
   canRefer,
   canSchedule,
+  restrictedToReferrals,
 }: {
   patients: Patient[];
   query: string;
@@ -1245,6 +1247,7 @@ function Patients({
   canCreate: boolean;
   canRefer: boolean;
   canSchedule: boolean;
+  restrictedToReferrals: boolean;
 }) {
   return (
     <div className="mx-auto max-w-7xl">
@@ -1252,7 +1255,9 @@ function Patients({
         <div>
           <h1 className="text-3xl font-bold">Acolhidos</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Cadastros e prontuários sob sua responsabilidade.
+            {restrictedToReferrals
+              ? 'Somente Acolhidos encaminhados para Orientação Jurídica.'
+              : 'Cadastros e prontuários sob sua responsabilidade.'}
           </p>
         </div>
         {canCreate && (
@@ -1299,6 +1304,13 @@ function Patients({
               )}
             </div>
           ))}
+          {patients.length === 0 && (
+            <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-500">
+              {restrictedToReferrals
+                ? 'Nenhum Acolhido foi encaminhado para Orientação Jurídica.'
+                : 'Nenhum Acolhido encontrado.'}
+            </div>
+          )}
         </div>
       </section>
     </div>

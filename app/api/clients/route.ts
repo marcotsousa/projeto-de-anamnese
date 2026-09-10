@@ -31,7 +31,13 @@ export async function GET(request: NextRequest) {
     query = query.or(`assigned_professional_id.eq.${authorization.userId},created_by.eq.${authorization.userId}`);
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: 'Não foi possível carregar os Acolhidos.' }, { status: 400 });
-  return NextResponse.json((data ?? []).map((row) => row.data));
+  const visibleRows = authorization.role === 'juridico'
+    ? (data ?? []).filter((row) => {
+        const client = row.data as { legalReferrals?: unknown[] } | null;
+        return Array.isArray(client?.legalReferrals) && client.legalReferrals.length > 0;
+      })
+    : (data ?? []);
+  return NextResponse.json(visibleRows.map((row) => row.data));
 }
 
 export async function POST(request: NextRequest) {
