@@ -12,9 +12,9 @@ async function authorize(request: NextRequest) {
   const { data } = await publicClient.auth.getUser(token);
   if (!data.user) return null;
   const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-  const { data: profile } = await admin.from('profiles').select('role').eq('user_id', data.user.id).single();
+  const { data: profile } = await admin.from('profiles').select('role, full_name').eq('user_id', data.user.id).single();
   if (!profile) return null;
-  return { admin, userId: data.user.id, role: profile.role as string };
+  return { admin, userId: data.user.id, role: profile.role as string, profileName: String(profile.full_name || data.user.email || 'Profissional jurídico') };
 }
 
 function addHour(time: string) {
@@ -79,9 +79,33 @@ export async function POST(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   const authorization = await authorize(request);
-  if (!authorization || authorization.role === 'juridico')
+  if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
+  const { clientId, legalReferral, legalAttendance } = await request.json();
+
+  if (legalAttendance) {
+    if (authorization.role !== 'juridico')
+      return NextResponse.json({ error: 'Somente o perfil Jurídico pode registrar este atendimento.' }, { status: 403 });
+    if (!clientId || !legalAttendance.id || !/^\d{4}-\d{2}-\d{2}$/.test(legalAttendance.date) || !/^\d{2}:\d{2}$/.test(legalAttendance.time) || !['Presencial', 'Virtual'].includes(legalAttendance.mode) || !legalAttendance.demand?.trim() || !legalAttendance.guidance?.trim() || !legalAttendance.actions?.trim() || !legalAttendance.nextSteps?.trim())
+      return NextResponse.json({ error: 'Preencha todos os campos do atendimento jurídico.' }, { status: 400 });
+
+    const { data: row, error: lookupError } = await authorization.admin.from('clients').select('data').eq('id', String(clientId)).maybeSingle();
+    if (lookupError || !row)
+      return NextResponse.json({ error: 'Acolhido não encontrado.' }, { status: 404 });
+
+    const currentClient = row.data as Record<string, unknown>;
+    const referrals = Array.isArray(currentClient.legalReferrals) ? currentClient.legalReferrals : [];
+    if (!referrals.length)
+      return NextResponse.json({ error: 'Este Acolhido não possui encaminhamento para Orientação Jurídica.' }, { status: 403 });
+    const currentAttendances = Array.isArray(currentClient.legalAttendances) ? currentClient.legalAttendances : [];
+    const safeAttendance = { ...legalAttendance, recordedBy: authorization.profileName };
+    const updatedClient = { ...currentClient, legalAttendances: [safeAttendance, ...currentAttendances] };
+    const { error } = await authorization.admin.from('clients').update({ data: updatedClient }).eq('id', String(clientId));
+    if (error) return NextResponse.json({ error: 'Não foi possível salvar o atendimento jurídico.' }, { status: 400 });
+    return NextResponse.json({ client: updatedClient });
+  }
+
+  if (authorization.role === 'juridico')
     return NextResponse.json({ error: 'Sem permissão para encaminhar.' }, { status: 403 });
-  const { clientId, legalReferral } = await request.json();
   if (!clientId || !legalReferral?.id || !/^\d{4}-\d{2}-\d{2}$/.test(legalReferral.date) || !legalReferral.reason?.trim())
     return NextResponse.json({ error: 'Informe os motivos do encaminhamento jurídico.' }, { status: 400 });
 

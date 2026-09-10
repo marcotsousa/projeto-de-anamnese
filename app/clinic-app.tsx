@@ -68,6 +68,7 @@ type Patient = {
   appointmentTime?: string;
   appointmentId?: string;
   legalReferrals?: LegalReferral[];
+  legalAttendances?: LegalAttendance[];
 };
 type LegalReferral = {
   id: number;
@@ -75,6 +76,17 @@ type LegalReferral = {
   reason: string;
   requestedBy: string;
   status: string;
+};
+type LegalAttendance = {
+  id: number;
+  date: string;
+  time: string;
+  mode: 'Presencial' | 'Virtual';
+  demand: string;
+  guidance: string;
+  actions: string;
+  nextSteps: string;
+  recordedBy: string;
 };
 type ProfessionalOption = {
   id: string;
@@ -214,7 +226,7 @@ export default function ClinicApp() {
     [sessions, setSessions] = useState<Session[]>([]),
     [anamneses, setAnamneses] = useState<Record<string, AnamnesisRecord>>({});
   const [query, setQuery] = useState(''),
-    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | 'appointment' | null>(
+    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | 'legalAttendance' | 'appointment' | null>(
       null,
     ),
     [mobile, setMobile] = useState(false);
@@ -592,6 +604,40 @@ export default function ClinicApp() {
     setSelected(updatedPatient);
     close();
   }
+  async function addLegalAttendance(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selected) return;
+    const form = new FormData(e.currentTarget);
+    const legalAttendance: LegalAttendance = {
+      id: Date.now(),
+      date: String(form.get('date')),
+      time: String(form.get('time')),
+      mode: String(form.get('mode')) as LegalAttendance['mode'],
+      demand: String(form.get('demand')).trim(),
+      guidance: String(form.get('guidance')).trim(),
+      actions: String(form.get('actions')).trim(),
+      nextSteps: String(form.get('nextSteps')).trim(),
+      recordedBy: profileName,
+    };
+    const { data: sessionData } = await supabase!.auth.getSession();
+    const response = await fetch('/api/clients', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${sessionData.session?.access_token}`,
+      },
+      body: JSON.stringify({ clientId: selected.id, legalAttendance }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      window.alert(result.error || 'Não foi possível salvar o atendimento jurídico.');
+      return;
+    }
+    const updatedPatient = result.client as Patient;
+    setPatients((current) => current.map((patient) => patient.id === selected.id ? updatedPatient : patient));
+    setSelected(updatedPatient);
+    close();
+  }
   async function addAppointment(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selected) return;
@@ -769,7 +815,7 @@ export default function ClinicApp() {
         </header>
         <div className="p-5 md:p-8" style={{ zoom: fontScale / 100 }}>
           {selected && (role === 'administrativo' || role === 'juridico') ? (
-            <ClientRegistryView p={selected} role={role} back={() => setSelected(null)} onLegalReferral={() => setModal('legalReferral')} onSchedule={() => setModal('appointment')} />
+            <ClientRegistryView p={selected} role={role} back={() => setSelected(null)} onLegalReferral={() => setModal('legalReferral')} onLegalAttendance={() => setModal('legalAttendance')} onSchedule={() => setModal('appointment')} />
           ) : selected ? (
             <PatientView
               p={selected}
@@ -830,7 +876,7 @@ export default function ClinicApp() {
           )}
         </div>
       </main>
-      {modal && role !== 'juridico' && (role !== 'administrativo' || modal === 'patient' || modal === 'legalReferral' || modal === 'appointment') && (
+      {modal && ((role === 'juridico' && modal === 'legalAttendance') || (role !== 'juridico' && (role !== 'administrativo' || modal === 'patient' || modal === 'legalReferral' || modal === 'appointment'))) && (
         <Modal
           title={
             modal === 'patient'
@@ -841,6 +887,8 @@ export default function ClinicApp() {
                   ? 'Aplicar instrumento'
                   : modal === 'legalReferral'
                     ? 'Encaminhar Orientação Jurídica'
+                    : modal === 'legalAttendance'
+                      ? 'Prontuário de Atendimento Jurídico'
                     : 'Agendar atendimento'
           }
           close={close}
@@ -852,6 +900,8 @@ export default function ClinicApp() {
             <SessionForm submit={addSession} />
           ) : modal === 'legalReferral' ? (
             <LegalReferralForm submit={addLegalReferral} patientName={selected?.name ?? ''} />
+          ) : modal === 'legalAttendance' ? (
+            <LegalAttendanceForm submit={addLegalAttendance} patientName={selected?.name ?? ''} />
           ) : modal === 'appointment' ? (
             <AppointmentForm submit={addAppointment} patientName={selected?.name ?? ''} />
           ) : (
@@ -1316,7 +1366,7 @@ function Patients({
     </div>
   );
 }
-function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p: Patient; role: UserRole; back: () => void; onLegalReferral: () => void; onSchedule: () => void }) {
+function ClientRegistryView({ p, role, back, onLegalReferral, onLegalAttendance, onSchedule }: { p: Patient; role: UserRole; back: () => void; onLegalReferral: () => void; onLegalAttendance: () => void; onSchedule: () => void }) {
   return (
     <div className="mx-auto max-w-4xl">
       <button onClick={back} className="mb-4 text-sm font-medium text-slate-500">
@@ -1326,7 +1376,7 @@ function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p:
         <div className="mb-6 flex flex-wrap items-center gap-4">
           <PatientName p={p} />
           <span className="ml-auto rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-            {role === 'juridico' ? 'Somente consulta' : 'Cadastro, agenda e encaminhamento'}
+            {role === 'juridico' ? 'Atendimento jurídico' : 'Cadastro, agenda e encaminhamento'}
           </span>
           {role !== 'juridico' && (
             <div className="flex flex-wrap gap-2">
@@ -1337,6 +1387,11 @@ function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p:
                 <Gavel size={17} /> Encaminhar Orientação Jurídica
               </button>
             </div>
+          )}
+          {role === 'juridico' && (
+            <button type="button" onClick={onLegalAttendance} className="flex items-center gap-2 rounded-xl bg-indigo-700 px-4 py-2.5 text-sm font-semibold text-white">
+              <Gavel size={17} /> Registrar atendimento jurídico
+            </button>
           )}
         </div>
         <div className="grid gap-5 border-t pt-6 sm:grid-cols-2">
@@ -1374,6 +1429,7 @@ function ClientRegistryView({ p, role, back, onLegalReferral, onSchedule }: { p:
           ))}
         </div>
         <LegalReferralsPanel referrals={p.legalReferrals ?? []} />
+        {role === 'juridico' && <LegalAttendancesPanel attendances={p.legalAttendances ?? []} />}
       </section>
     </div>
   );
@@ -2784,6 +2840,36 @@ function LegalReferralsPanel({ referrals, compact = false }: { referrals: LegalR
     </div>
   );
 }
+function LegalAttendancesPanel({ attendances }: { attendances: LegalAttendance[] }) {
+  return (
+    <div className="mt-8 border-t pt-6">
+      <div className="mb-4 flex items-center gap-2">
+        <NotebookPen size={18} className="text-teal-700" />
+        <h2 className="font-bold">Prontuário de Atendimento Jurídico</h2>
+      </div>
+      {attendances.length ? (
+        <div className="space-y-4">
+          {attendances.map((attendance) => (
+            <article key={attendance.id} className="rounded-2xl border border-teal-100 bg-teal-50/40 p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-700">{formatDateBR(attendance.date)} às {attendance.time} · {attendance.recordedBy}</p>
+                <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-teal-700">{attendance.mode}</span>
+              </div>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <Info title="Demanda apresentada" text={attendance.demand} />
+                <Info title="Orientações prestadas" text={attendance.guidance} />
+                <Info title="Providências adotadas" text={attendance.actions} />
+                <Info title="Próximos passos" text={attendance.nextSteps} />
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-4 text-sm text-slate-400">Nenhum atendimento jurídico registrado.</p>
+      )}
+    </div>
+  );
+}
 function Modal({
   title,
   subtitle = 'Os campos marcados são obrigatórios',
@@ -3109,6 +3195,36 @@ function LegalReferralForm({ submit, patientName }: { submit: (e: React.FormEven
       <Field label="Data do encaminhamento" name="date" type="date" value={today} readOnly />
       <Text label="Motivos e justificativa do atendimento jurídico" name="reason" />
       <Submit label="Registrar encaminhamento" />
+    </form>
+  );
+}
+function LegalAttendanceForm({ submit, patientName }: { submit: (e: React.FormEvent<HTMLFormElement>) => void; patientName: string }) {
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  return (
+    <form onSubmit={submit} className="grid gap-5 p-6">
+      <div className="rounded-xl bg-indigo-50 p-4 text-sm text-indigo-800">
+        <p className="font-semibold">Acolhido: {patientName}</p>
+        <p className="mt-1 text-xs">Registro restrito ao atendimento jurídico. Evite inserir informações clínicas que não sejam necessárias.</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Field label="Data do atendimento" name="date" type="date" value={today} readOnly />
+        <Field label="Horário" name="time" type="time" value={currentTime} />
+        <label className="grid gap-1.5 text-sm font-semibold">
+          Modalidade
+          <select required name="mode" defaultValue="" className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+            <option value="">Selecione</option>
+            <option>Presencial</option>
+            <option>Virtual</option>
+          </select>
+        </label>
+      </div>
+      <Text label="Demanda apresentada / motivo do atendimento" name="demand" />
+      <Text label="Orientações prestadas" name="guidance" />
+      <Text label="Providências adotadas" name="actions" />
+      <Text label="Próximos passos" name="nextSteps" />
+      <Submit label="Salvar atendimento jurídico" />
     </form>
   );
 }
