@@ -1565,7 +1565,12 @@ function UserManagement() {
         <p className="mt-1 text-sm text-slate-500">Cadastre profissionais, verifique e atribua seus níveis de acesso.</p>
       </div>
       <div className="grid gap-6 xl:grid-cols-[.8fr_1.2fr]">
-        <form onSubmit={create} autoComplete="off" className="panel space-y-4 p-6">
+        {viewingUser ? <section className="panel overflow-hidden">
+          <div className="panel-head"><div><h2>Perfil do usuário</h2><p>Dados cadastrais e nível de acesso</p></div><button type="button" onClick={() => setViewingUser(null)} className="text-sm font-semibold text-teal-700">Novo usuário</button></div>
+          <div className="grid gap-4 p-6 sm:grid-cols-2">
+            {[['Nome completo', viewingUser.fullName], ['E-mail', viewingUser.email], ['Perfil de acesso', roleLabel[viewingUser.role]], ['Situação da atividade', viewingUser.blocked ? 'Suspensa' : 'Ativa'], ['Cargo', viewingUser.jobTitle], ['Conselho Regional', viewingUser.council], ['Disponibilidade', viewingUser.availabilityStart && viewingUser.availabilityEnd ? `${viewingUser.availabilityStart} às ${viewingUser.availabilityEnd}` : ''], ['WhatsApp', viewingUser.whatsapp], ['Município', viewingUser.municipality], ['Endereço comercial', viewingUser.businessAddress]].map(([label, value]) => <div key={label} className={label === 'Endereço comercial' ? 'sm:col-span-2' : ''}><p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p><p className="mt-1 break-words text-sm font-medium text-slate-700">{value || 'Não informado'}</p></div>)}
+          </div>
+        </section> : <form onSubmit={create} autoComplete="off" className="panel space-y-4 p-6">
           <h2 className="text-lg font-bold">Novo usuário</h2>
           <Field label="Nome completo" name="fullName" />
           <Field label="Cargo" name="jobTitle" />
@@ -1611,7 +1616,7 @@ function UserManagement() {
           </div>
           <button className="h-11 w-full rounded-xl bg-[#176a68] font-semibold text-white">Criar usuário</button>
           {message && <p className="text-sm text-slate-500">{message}</p>}
-        </form>
+        </form>}
         <section className="panel overflow-hidden">
           <div className="panel-head"><div><h2>Usuários cadastrados</h2><p>{users.length} conta(s)</p></div></div>
           {loading ? <p className="p-6 text-sm text-slate-400">Carregando…</p> : (
@@ -1672,33 +1677,6 @@ function UserManagement() {
           )}
         </section>
       </div>
-      {viewingUser && (
-        <Modal
-          title="Perfil do usuário"
-          subtitle="Dados cadastrais e nível de acesso"
-          close={() => setViewingUser(null)}
-        >
-          <div className="grid gap-4 p-6 sm:grid-cols-2">
-            {[
-              ['Nome completo', viewingUser.fullName],
-              ['E-mail', viewingUser.email],
-              ['Perfil de acesso', roleLabel[viewingUser.role]],
-              ['Situação da atividade', viewingUser.blocked ? 'Suspensa' : 'Ativa'],
-              ['Cargo', viewingUser.jobTitle],
-              ['Conselho Regional', viewingUser.council],
-              ['Disponibilidade', viewingUser.availabilityStart && viewingUser.availabilityEnd ? `${viewingUser.availabilityStart} às ${viewingUser.availabilityEnd}` : ''],
-              ['WhatsApp', viewingUser.whatsapp],
-              ['Município', viewingUser.municipality],
-              ['Endereço comercial', viewingUser.businessAddress],
-            ].map(([label, value]) => (
-              <div key={label} className={label === 'Endereço comercial' ? 'sm:col-span-2' : ''}>
-                <p className="text-xs font-bold uppercase tracking-wide text-slate-400">{label}</p>
-                <p className="mt-1 break-words text-sm font-medium text-slate-700">{value || 'Não informado'}</p>
-              </div>
-            ))}
-          </div>
-        </Modal>
-      )}
     </div>
   );
 }
