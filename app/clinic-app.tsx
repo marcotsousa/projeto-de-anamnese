@@ -3096,7 +3096,7 @@ function PatientForm({
             Vínculo do solicitante
             <select required name="requesterRelationship" value={requesterRelationship} onChange={(event) => setRequesterRelationship(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
               <option value="">Selecione</option>
-              {['CONJUGE', 'IRMÃO(A)', 'FILHO(A)', 'AMIGO(A)', 'AVÔ(Ó)', 'MADRASTA', 'CUNHADO(A)', 'MÃE', 'NAMORADO(A)', 'Outro', 'PADRASTO', 'PAI', 'PRIMO(A)', 'PROF. DA REDE', 'TIO(A)', 'VIZINHO(A)', 'Próprio Usuário'].map((relationship) => <option key={relationship} value={relationship}>{relationship}</option>)}
+              {['Cônjuge', 'Irmão(ã)', 'Filho(a)', 'Amigo(a)', 'Avô(ó)', 'Madrasta', 'Cunhado(a)', 'Mãe', 'Namorado(a)', 'Outro', 'Padrasto', 'Pai', 'Primo(a)', 'Profissional da rede', 'Tio(a)', 'Vizinho(a)', 'Próprio Usuário'].map((relationship) => <option key={relationship} value={relationship}>{relationship}</option>)}
             </select>
           </label>
           <Field label="Telefone do solicitante" name="phone" type="tel" value={requesterPhone} onChange={(event) => setRequesterPhone(event.target.value)} />
