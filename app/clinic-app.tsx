@@ -1414,7 +1414,7 @@ function ClientRegistryView({ p, role, back, onLegalReferral, onLegalAttendance,
             ['Vínculo do solicitante', p.requesterRelationship],
             ['Telefone do solicitante', p.phone],
             ['E-mail do solicitante', p.requesterEmail],
-            ['Nome do usuário (SPA)', p.name],
+            ['Acolhido', p.name],
             ['E-mail (SPA)', p.email],
             ['Telefone (SPA)', p.spaPhone],
             ['Data de nascimento', formatDateBR(p.birth)],
@@ -3106,7 +3106,7 @@ function PatientForm({
 
       <FormSection number="2" title="Usuário SPA" description="Dados pessoais da pessoa que receberá o atendimento.">
         {requesterIsSpaUser && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">Os dados do solicitante foram repetidos automaticamente para o Usuário SPA.</p>}
-        <Field label="Nome do usuário (SPA)" name="name" value={requesterIsSpaUser ? requesterName : spaName} onChange={(event) => setSpaName(event.target.value)} readOnly={requesterIsSpaUser} />
+        <Field label="Acolhido" name="name" value={requesterIsSpaUser ? requesterName : spaName} onChange={(event) => setSpaName(event.target.value)} readOnly={requesterIsSpaUser} />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="E-mail (SPA) (opcional)" name="email" type="email" required={false} value={requesterIsSpaUser ? requesterEmail : spaEmail} onChange={(event) => setSpaEmail(event.target.value)} readOnly={requesterIsSpaUser} />
           <Field label="Telefone (SPA)" name="spaPhone" type="tel" value={requesterIsSpaUser ? requesterPhone : spaPhone} onChange={(event) => setSpaPhone(event.target.value)} readOnly={requesterIsSpaUser} />
