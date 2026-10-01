@@ -3104,12 +3104,12 @@ function PatientForm({
         </div>
       </FormSection>
 
-      <FormSection number="2" title="Usuário SPA" description="Dados pessoais da pessoa que receberá o atendimento.">
-        {requesterIsSpaUser && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">Os dados do solicitante foram repetidos automaticamente para o Usuário SPA.</p>}
+      <FormSection number="2" title="Dados do Acolhido" description="Dados pessoais da pessoa que receberá o atendimento.">
+        {requesterIsSpaUser && <p className="rounded-xl bg-teal-50 px-4 py-3 text-sm text-teal-800">Os dados do solicitante foram repetidos automaticamente para o Acolhido.</p>}
         <Field label="Acolhido" name="name" value={requesterIsSpaUser ? requesterName : spaName} onChange={(event) => setSpaName(event.target.value)} readOnly={requesterIsSpaUser} />
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="E-mail (SPA) (opcional)" name="email" type="email" required={false} value={requesterIsSpaUser ? requesterEmail : spaEmail} onChange={(event) => setSpaEmail(event.target.value)} readOnly={requesterIsSpaUser} />
-          <Field label="Telefone (SPA)" name="spaPhone" type="tel" value={requesterIsSpaUser ? requesterPhone : spaPhone} onChange={(event) => setSpaPhone(event.target.value)} readOnly={requesterIsSpaUser} />
+          <Field label="E-mail do acolhido (opcional)" name="email" type="email" required={false} value={requesterIsSpaUser ? requesterEmail : spaEmail} onChange={(event) => setSpaEmail(event.target.value)} readOnly={requesterIsSpaUser} />
+          <Field label="Telefone do acolhido" name="spaPhone" type="tel" value={requesterIsSpaUser ? requesterPhone : spaPhone} onChange={(event) => setSpaPhone(event.target.value)} readOnly={requesterIsSpaUser} />
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Documento de identificação" name="document" />
@@ -3117,7 +3117,7 @@ function PatientForm({
           <label className="grid gap-1.5 text-sm font-semibold">Idade<input required readOnly name="age" type="number" value={calculatedAge} placeholder="Automática" className="h-11 rounded-xl border bg-slate-50 px-3 font-normal text-slate-600 outline-none" /></label>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
-          <SelectField label="Sexo SPA" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
+          <SelectField label="Sexo do acolhido" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
           <SelectField label="Estado civil" name="maritalStatus" options={['Solteiro(a)', 'Casado(a)', 'União estável', 'Separado(a)', 'Divorciado(a)', 'Viúvo(a)', 'Outro', 'Não informado']} />
         </div>
       </FormSection>
