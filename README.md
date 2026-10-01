@@ -56,3 +56,5 @@ drizzle/                migrações SQL geradas
 ## Segurança e produção
 
 Nunca aceite `professional_id` enviado pelo navegador: derive-o da sessão no servidor e inclua-o em toda leitura/escrita. Use HTTPS, política de backup, auditoria, expiração de sessão e processo compatível com LGPD. Não registre conteúdo clínico em logs. A hospedagem usa SQLite distribuído (Cloudflare D1), compatível com o esquema Drizzle.
+# Versão restaurada em 10/09/2026
+
