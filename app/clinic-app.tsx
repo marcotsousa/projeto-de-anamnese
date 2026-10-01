@@ -5,7 +5,6 @@ import { mgMesoregionEntries } from './mg-mesoregions';
 import {
   Activity,
   Ban,
-  Bell,
   CalendarDays,
   CheckCircle2,
   ChevronRight,
@@ -803,19 +802,6 @@ export default function ClinicApp() {
               className="hidden"
             />
           </div>
-          <button className="relative grid h-10 w-10 place-items-center rounded-xl border border-slate-200">
-            <Bell size={18} />
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white" />
-          </button>
-          {role !== 'juridico' && (
-            <button
-              onClick={() => setModal('patient')}
-              className="hidden items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:flex"
-            >
-              <Plus size={17} />
-              Novo Acolhido
-            </button>
-          )}
         </header>
         <div className="app-content p-6 md:p-10 xl:p-12" style={{ zoom: fontScale / 100 }}>
           {selected && (role === 'administrativo' || role === 'juridico') ? (
@@ -958,13 +944,6 @@ function Dashboard({
             Seja Bem-Vindo, {profileName}.
           </h1>
         </div>
-        <button
-          onClick={open}
-          className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white sm:hidden"
-        >
-          <Plus size={17} />
-          Novo Acolhido
-        </button>
       </div>
       <div className="grid gap-6 sm:grid-cols-2">
         <Metric
@@ -1323,15 +1302,6 @@ function Patients({
               : 'Cadastros e prontuários sob sua responsabilidade.'}
           </p>
         </div>
-        {canCreate && (
-          <button
-            onClick={open}
-            className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"
-          >
-            <Plus size={17} />
-            Novo Acolhido
-          </button>
-        )}
       </div>
       <section className="panel">
         <div className="p-5">
