@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
     .select('id')
     .eq('professional_user_id', professionalId)
     .eq('appointment_date', date)
-    .in('status', ['agendado', 'confirmado'])
+    .neq('status', 'cancelado')
     .lt('start_time', endTime)
     .gt('end_time', startTime)
     .limit(1);

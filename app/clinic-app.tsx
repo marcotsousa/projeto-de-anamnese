@@ -3014,13 +3014,16 @@ function PatientForm({
         if (response.ok && active) {
           const appointments: AppointmentRecord[] = await response.json();
           setBusyTimes(appointments.flatMap((appointment) => {
-            const [hours, minutes] = appointment.startTime.split(':').map(Number);
-            const previous = hours * 60 + minutes - 30;
-            return [
-              appointment.startTime,
-              previous >= 0 ? `${String(Math.floor(previous / 60)).padStart(2, '0')}:${String(previous % 60).padStart(2, '0')}` : '',
-            ];
-          }).filter(Boolean));
+            const [startHour, startMinute] = appointment.startTime.split(':').map(Number);
+            const [endHour, endMinute] = appointment.endTime.split(':').map(Number);
+            const start = startHour * 60 + startMinute;
+            const end = endHour * 60 + endMinute;
+            const slots: string[] = [];
+            for (let slot = start - 60; slot < end; slot += 30) {
+              if (slot >= 0) slots.push(`${String(Math.floor(slot / 60)).padStart(2, '0')}:${String(slot % 60).padStart(2, '0')}`);
+            }
+            return slots;
+          }));
         }
       } finally {
         if (active) setSlotsLoading(false);
@@ -3273,13 +3276,16 @@ function AppointmentForm({ submit, patientName }: { submit: (e: React.FormEvent<
         if (response.ok && active) {
           const appointments: AppointmentRecord[] = await response.json();
           setBusyTimes(appointments.flatMap((appointment) => {
-            const [hours, minutes] = appointment.startTime.split(':').map(Number);
-            const previous = hours * 60 + minutes - 30;
-            return [
-              appointment.startTime,
-              previous >= 0 ? `${String(Math.floor(previous / 60)).padStart(2, '0')}:${String(previous % 60).padStart(2, '0')}` : '',
-            ];
-          }).filter(Boolean));
+            const [startHour, startMinute] = appointment.startTime.split(':').map(Number);
+            const [endHour, endMinute] = appointment.endTime.split(':').map(Number);
+            const start = startHour * 60 + startMinute;
+            const end = endHour * 60 + endMinute;
+            const slots: string[] = [];
+            for (let slot = start - 60; slot < end; slot += 30) {
+              if (slot >= 0) slots.push(`${String(Math.floor(slot / 60)).padStart(2, '0')}:${String(slot % 60).padStart(2, '0')}`);
+            }
+            return slots;
+          }));
         }
       } finally {
         if (active) setLoadingTimes(false);
