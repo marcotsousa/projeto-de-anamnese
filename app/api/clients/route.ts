@@ -80,7 +80,21 @@ export async function POST(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   const authorization = await authorize(request);
   if (!authorization) return NextResponse.json({ error: 'Sem permissão.' }, { status: 403 });
-  const { clientId, legalReferral, legalAttendance } = await request.json();
+  const { clientId, legalReferral, legalAttendance, sefipFollowUp } = await request.json();
+
+  if (sefipFollowUp) {
+    if (authorization.role === 'juridico') return NextResponse.json({ error: 'Sem permissão para registrar acompanhamento SEFIP.' }, { status: 403 });
+    if (!clientId || !sefipFollowUp.id || !sefipFollowUp.date || !sefipFollowUp.service || !sefipFollowUp.unit || !sefipFollowUp.status || !sefipFollowUp.notes || !sefipFollowUp.nextSteps)
+      return NextResponse.json({ error: 'Preencha todos os campos do acompanhamento SEFIP.' }, { status: 400 });
+    const { data: row, error: lookupError } = await authorization.admin.from('clients').select('data').eq('id', String(clientId)).maybeSingle();
+    if (lookupError || !row) return NextResponse.json({ error: 'Acolhido não encontrado.' }, { status: 404 });
+    const currentClient = row.data as Record<string, unknown>;
+    const current = Array.isArray(currentClient.sefipFollowUps) ? currentClient.sefipFollowUps : [];
+    const updatedClient = { ...currentClient, sefipFollowUps: [{ ...sefipFollowUp, recordedBy: authorization.profileName }, ...current] };
+    const { error } = await authorization.admin.from('clients').update({ data: updatedClient }).eq('id', String(clientId));
+    if (error) return NextResponse.json({ error: 'Não foi possível salvar o acompanhamento SEFIP.' }, { status: 400 });
+    return NextResponse.json({ client: updatedClient });
+  }
 
   if (legalAttendance) {
     if (authorization.role !== 'juridico')

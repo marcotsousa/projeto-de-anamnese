@@ -68,7 +68,9 @@ type Patient = {
   appointmentId?: string;
   legalReferrals?: LegalReferral[];
   legalAttendances?: LegalAttendance[];
+  sefipFollowUps?: SefipFollowUp[];
 };
+type SefipFollowUp = { id: number; date: string; service: string; unit: string; status: string; notes: string; nextSteps: string; recordedBy: string };
 type LegalReferral = {
   id: number;
   date: string;
@@ -227,7 +229,7 @@ export default function ClinicApp() {
     [sessions, setSessions] = useState<Session[]>([]),
     [anamneses, setAnamneses] = useState<Record<string, AnamnesisRecord>>({});
   const [query, setQuery] = useState(''),
-    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | 'legalAttendance' | 'appointment' | null>(
+    [modal, setModal] = useState<'patient' | 'session' | 'assessment' | 'legalReferral' | 'legalAttendance' | 'sefip' | 'appointment' | null>(
       null,
     ),
     [mobile, setMobile] = useState(false);
@@ -641,6 +643,18 @@ export default function ClinicApp() {
     setSelected(updatedPatient);
     close();
   }
+  async function addSefipFollowUp(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!selected) return;
+    const form = new FormData(e.currentTarget);
+    const followUp: SefipFollowUp = { id: Date.now(), date: String(form.get('date')), service: String(form.get('service')), unit: String(form.get('unit')).trim(), status: String(form.get('status')), notes: String(form.get('notes')).trim(), nextSteps: String(form.get('nextSteps')).trim(), recordedBy: profileName };
+    const { data: sessionData } = await supabase!.auth.getSession();
+    const response = await fetch('/api/clients', { method: 'PATCH', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${sessionData.session?.access_token}` }, body: JSON.stringify({ clientId: selected.id, sefipFollowUp: followUp }) });
+    const result = await response.json();
+    if (!response.ok) { window.alert(result.error || 'Não foi possível registrar o acompanhamento SEFIP.'); return; }
+    const updatedPatient = result.client as Patient;
+    setPatients((current) => current.map((patient) => patient.id === selected.id ? updatedPatient : patient)); setSelected(updatedPatient); close();
+  }
   async function addAppointment(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!selected) return;
@@ -866,7 +880,7 @@ export default function ClinicApp() {
           )}
         </div>
       </main>
-      {modal && ((role === 'juridico' && modal === 'legalAttendance') || (role !== 'juridico' && (role !== 'administrativo' || modal === 'patient' || modal === 'legalReferral' || modal === 'appointment'))) && (
+      {modal && ((role === 'juridico' && modal === 'legalAttendance') || (role !== 'juridico' && (role !== 'administrativo' || modal === 'patient' || modal === 'legalReferral' || modal === 'sefip' || modal === 'appointment'))) && (
         <Modal
           title={
             modal === 'patient'
@@ -879,6 +893,8 @@ export default function ClinicApp() {
                     ? 'Encaminhar Orientação Jurídica'
                     : modal === 'legalAttendance'
                       ? 'Prontuário de Atendimento Jurídico'
+                    : modal === 'sefip'
+                      ? 'Acompanhamento SEFIP'
                     : 'Agendar atendimento'
           }
           close={close}
@@ -892,6 +908,8 @@ export default function ClinicApp() {
             <LegalReferralForm submit={addLegalReferral} patientName={selected?.name ?? ''} />
           ) : modal === 'legalAttendance' ? (
             <LegalAttendanceForm submit={addLegalAttendance} patientName={selected?.name ?? ''} />
+          ) : modal === 'sefip' ? (
+            <SefipForm submit={addSefipFollowUp} patientName={selected?.name ?? ''} />
           ) : modal === 'appointment' ? (
             <AppointmentForm submit={addAppointment} patientName={selected?.name ?? ''} />
           ) : (
@@ -1671,7 +1689,7 @@ function PatientView({
   saveAnamnesis: (record: AnamnesisRecord) => void;
   onDelete: () => void;
   back: () => void;
-  open: (m: 'session' | 'assessment' | 'legalReferral' | 'appointment') => void;
+  open: (m: 'session' | 'assessment' | 'legalReferral' | 'sefip' | 'appointment') => void;
 }) {
   const tabs = ['Resumo', 'Anamnese', 'Evolução', 'Avaliações'];
   const clinicalSummary = anamnesis?.psychosocialAnswers?.q72?.trim() ?? '';
@@ -1721,6 +1739,13 @@ function PatientView({
               >
                 <Gavel size={17} />
                 Encaminhar Orientação Jurídica
+              </button>
+              <button
+                onClick={() => open('sefip')}
+                className="flex items-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
+              >
+                <ClipboardCheck size={17} />
+                SEFIP
               </button>
               <button
                 onClick={onDelete}
@@ -3188,6 +3213,16 @@ function LegalAttendanceForm({ submit, patientName }: { submit: (e: React.FormEv
       <Submit label="Salvar atendimento jurídico" />
     </form>
   );
+}
+function SefipForm({ submit, patientName }: { submit: (e: React.FormEvent<HTMLFormElement>) => void; patientName: string }) {
+  const today = new Date().toISOString().slice(0, 10);
+  return <form onSubmit={submit} className="grid gap-5 p-6">
+    <div className="rounded-xl bg-teal-50 p-4 text-sm text-teal-800"><p className="font-semibold">Acolhido: {patientName}</p><p className="mt-1 text-xs">Registre o acompanhamento do encaminhamento e a articulação com a rede de saúde.</p></div>
+    <div className="grid gap-4 sm:grid-cols-2"><Field label="Data do acompanhamento" name="date" type="date" value={today} readOnly /><label className="grid gap-1.5 text-sm font-semibold">Serviço de encaminhamento<select required name="service" className="h-11 rounded-xl border bg-white px-3 font-normal"><option value="">Selecione</option><option>Unidade de Saúde</option><option>RAPS</option><option>Comunidade Terapêutica</option></select></label></div>
+    <Field label="Unidade / serviço" name="unit" placeholder="Nome da unidade ou serviço" />
+    <label className="grid gap-1.5 text-sm font-semibold">Situação do encaminhamento<select required name="status" className="h-11 rounded-xl border bg-white px-3 font-normal"><option value="">Selecione</option><option>Encaminhado</option><option>Em acompanhamento</option><option>Atendido</option><option>Não compareceu</option><option>Contrarreferência recebida</option></select></label>
+    <Text label="Registro do acompanhamento" name="notes" /><Text label="Próximos passos" name="nextSteps" /><Submit label="Registrar acompanhamento SEFIP" />
+  </form>;
 }
 function AppointmentForm({ submit, patientName }: { submit: (e: React.FormEvent<HTMLFormElement>) => void; patientName: string }) {
   const [professionals, setProfessionals] = useState<ProfessionalOption[]>([]);
