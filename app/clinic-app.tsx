@@ -56,6 +56,7 @@ type Patient = {
   municipality?: string;
   region?: string;
   serviceType?: string;
+  sefip?: string;
   residentialAddress?: string;
   requesterEmail?: string;
   stateSpa?: string;
@@ -444,6 +445,7 @@ export default function ClinicApp() {
       municipality: String(f.get('municipality')),
       region: String(f.get('region') ?? ''),
       serviceType: String(f.get('serviceType') ?? ''),
+      sefip: String(f.get('sefip') ?? ''),
       residentialAddress: String(f.get('residentialAddress')),
       requesterEmail: String(f.get('requesterEmail')),
       stateSpa: String(f.get('stateSpa')),
@@ -1689,7 +1691,7 @@ function PatientView({
   saveAnamnesis: (record: AnamnesisRecord) => void;
   onDelete: () => void;
   back: () => void;
-  open: (m: 'session' | 'assessment' | 'legalReferral' | 'sefip' | 'appointment') => void;
+  open: (m: 'session' | 'assessment' | 'legalReferral' | 'appointment') => void;
 }) {
   const tabs = ['Resumo', 'Anamnese', 'Evolução', 'Avaliações'];
   const clinicalSummary = anamnesis?.psychosocialAnswers?.q72?.trim() ?? '';
@@ -1739,13 +1741,6 @@ function PatientView({
               >
                 <Gavel size={17} />
                 Encaminhar Orientação Jurídica
-              </button>
-              <button
-                onClick={() => open('sefip')}
-                className="flex items-center gap-2 rounded-xl border border-teal-200 bg-white px-4 py-2.5 text-sm font-semibold text-teal-700 hover:bg-teal-50"
-              >
-                <ClipboardCheck size={17} />
-                SEFIP
               </button>
               <button
                 onClick={onDelete}
@@ -3093,6 +3088,7 @@ function PatientForm({
           <SelectField label="Sexo do acolhido" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
           <SelectField label="Estado civil" name="maritalStatus" options={['Solteiro(a)', 'Casado(a)', 'União estável', 'Separado(a)', 'Divorciado(a)', 'Viúvo(a)', 'Outro', 'Não informado']} />
         </div>
+        <SelectField label="Possui encaminhamento SEFIP?" name="sefip" options={['Sim', 'Não']} />
       </FormSection>
 
       <FormSection number="3" title="Endereço residencial" description="Selecione a UF para carregar os municípios correspondentes.">
