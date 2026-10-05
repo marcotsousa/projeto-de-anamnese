@@ -3089,7 +3089,7 @@ function PatientForm({
           <SelectField label="Sexo do acolhido" name="genderSpa" options={['Feminino', 'Masculino', 'Não binário', 'Outro', 'Não informado']} />
           <SelectField label="Estado civil" name="maritalStatus" options={['Solteiro(a)', 'Casado(a)', 'União estável', 'Separado(a)', 'Divorciado(a)', 'Viúvo(a)', 'Outro', 'Não informado']} />
         </div>
-        <SelectField label="Possui encaminhamento SEFIP?" name="sefip" options={['Sim', 'Não']} />
+        <SelectField label="SEFIP" name="sefip" options={['Sim', 'Não']} />
       </FormSection>
 
       <FormSection number="3" title="Endereço residencial" description="Selecione a UF para carregar os municípios correspondentes.">
