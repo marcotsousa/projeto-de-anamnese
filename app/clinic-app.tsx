@@ -2868,7 +2868,7 @@ function Modal({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/35 p-4 backdrop-blur-sm">
       <div className={`max-h-[92vh] w-full overflow-y-auto rounded-3xl bg-white shadow-2xl ${wide ? 'max-w-4xl' : 'max-w-xl'}`}>
-        <div className="flex items-center justify-between border-b px-6 py-5">
+        <div className="sticky top-0 z-20 flex items-center justify-between border-b bg-white px-6 py-5">
           <div>
             <h2 className="text-xl font-bold">{title}</h2>
             <p className="text-xs text-slate-400">{subtitle}</p>
