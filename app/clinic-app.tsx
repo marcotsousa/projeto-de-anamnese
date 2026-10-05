@@ -1322,6 +1322,7 @@ function Patients({
               : 'Cadastros e prontuários sob sua responsabilidade.'}
           </p>
         </div>
+        {canCreate && <button type="button" onClick={open} className="flex items-center gap-2 rounded-xl bg-[#176a68] px-4 py-2.5 text-sm font-semibold text-white"><Plus size={17} /> Incluir Acolhido</button>}
       </div>
       <section className="panel">
         <div className="p-5">
