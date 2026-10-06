@@ -1169,7 +1169,7 @@ function Schedule({ patients, select, role }: { patients: Patient[]; select: (pa
 }
 
 function ReportsPage({ patients, sessions, profileName, profileJobTitle, profileCouncil }: { patients: Patient[]; sessions: Session[]; profileName: string; profileJobTitle: string; profileCouncil: string }) {
-  const [reportType, setReportType] = useState<'declaration' | 'attendance'>('declaration');
+  const [reportType, setReportType] = useState<'declaration' | 'attendance' | 'sefip'>('declaration');
   const [patientId, setPatientId] = useState('');
   const [attendanceDate, setAttendanceDate] = useState(new Date().toISOString().slice(0, 10));
   const [startTime, setStartTime] = useState('');
@@ -1182,6 +1182,7 @@ function ReportsPage({ patients, sessions, profileName, profileJobTitle, profile
     .sort((a, b) => String(a.isoDate ?? a.date).localeCompare(String(b.isoDate ?? b.date)));
   const formatDate = (value: string) => formatDateBR(value) || '__/__/____';
   const issuingProfessional = profileName;
+  const sefipPatients = patients.filter((item) => String(item.sefip ?? '').trim().toLowerCase() === 'sim');
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -1189,7 +1190,7 @@ function ReportsPage({ patients, sessions, profileName, profileJobTitle, profile
         <h1 className="text-3xl font-bold">Relatórios</h1>
         <p className="mt-1 text-sm text-slate-500">Emita documentos a partir dos dados e atendimentos registrados.</p>
       </div>
-      <div className="mb-6 grid gap-4 md:grid-cols-2">
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
         <button type="button" onClick={() => setReportType('declaration')} className={`rounded-2xl border p-5 text-left transition ${reportType === 'declaration' ? 'border-teal-600 bg-teal-50 ring-1 ring-teal-600' : 'border-slate-200 bg-white hover:border-teal-300'}`}>
           <p className="font-bold text-slate-800">Declaração de Comparecimento</p>
           <p className="mt-1 text-sm text-slate-500">Comprova a presença do Acolhido em uma data e horário.</p>
@@ -1197,6 +1198,10 @@ function ReportsPage({ patients, sessions, profileName, profileJobTitle, profile
         <button type="button" onClick={() => setReportType('attendance')} className={`rounded-2xl border p-5 text-left transition ${reportType === 'attendance' ? 'border-teal-600 bg-teal-50 ring-1 ring-teal-600' : 'border-slate-200 bg-white hover:border-teal-300'}`}>
           <p className="font-bold text-slate-800">Relatório de Atendimento</p>
           <p className="mt-1 text-sm text-slate-500">Apresenta o número de atendimentos e suas respectivas datas.</p>
+        </button>
+        <button type="button" onClick={() => setReportType('sefip')} className={`rounded-2xl border p-5 text-left transition ${reportType === 'sefip' ? 'border-teal-600 bg-teal-50 ring-1 ring-teal-600' : 'border-slate-200 bg-white hover:border-teal-300'}`}>
+          <p className="font-bold text-slate-800">Relatório SEFIP</p>
+          <p className="mt-1 text-sm text-slate-500">Lista os Acolhidos com SEFIP marcado como Sim.</p>
         </button>
       </div>
       <div className="grid gap-8 xl:grid-cols-[380px_1fr]">
@@ -1207,21 +1212,23 @@ function ReportsPage({ patients, sessions, profileName, profileJobTitle, profile
             <p className="mt-1 text-sm font-semibold text-slate-800">{issuingProfessional}</p>
             <p className="mt-1 text-xs text-slate-600">{profileJobTitle || 'Cargo não informado'}{profileCouncil ? ` · ${profileCouncil}` : ''}</p>
           </div>
-          <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Acolhido
-            <select value={patientId} onChange={(event) => setPatientId(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
-              <option value="">Selecione o Acolhido</option>
-              {patients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
-            </select>
-          </label>
-          <label className="grid gap-2 text-sm font-semibold text-slate-700">
-            Modalidade do atendimento
-            <select value={attendanceMode} onChange={(event) => setAttendanceMode(event.target.value as 'Virtual' | 'Presencial' | '')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
-              <option value="">Selecione a modalidade</option>
-              <option value="Virtual">Atendimento Virtual</option>
-              <option value="Presencial">Atendimento Presencial</option>
-            </select>
-          </label>
+          {reportType !== 'sefip' && <>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Acolhido
+              <select value={patientId} onChange={(event) => setPatientId(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+                <option value="">Selecione o Acolhido</option>
+                {patients.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-semibold text-slate-700">
+              Modalidade do atendimento
+              <select value={attendanceMode} onChange={(event) => setAttendanceMode(event.target.value as 'Virtual' | 'Presencial' | '')} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500">
+                <option value="">Selecione a modalidade</option>
+                <option value="Virtual">Atendimento Virtual</option>
+                <option value="Presencial">Atendimento Presencial</option>
+              </select>
+            </label>
+          </>}
           {reportType === 'declaration' && (
             <>
               <label className="grid gap-2 text-sm font-semibold text-slate-700">Data do comparecimento<input type="date" lang="pt-BR" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
@@ -1231,8 +1238,8 @@ function ReportsPage({ patients, sessions, profileName, profileJobTitle, profile
               </div>
             </>
           )}
-          <label className="grid gap-2 text-sm font-semibold text-slate-700">Cidade de emissão<input value={city} onChange={(event) => setCity(event.target.value)} placeholder={patient?.municipality || 'Informe a cidade'} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
-          <button type="button" disabled={!patient || !attendanceMode} onClick={() => window.print()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176a68] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><Printer size={17} /> Imprimir ou salvar em PDF</button>
+          {reportType !== 'sefip' && <label className="grid gap-2 text-sm font-semibold text-slate-700">Cidade de emissão<input value={city} onChange={(event) => setCity(event.target.value)} placeholder={patient?.municipality || 'Informe a cidade'} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>}
+          <button type="button" disabled={reportType !== 'sefip' && (!patient || !attendanceMode)} onClick={() => window.print()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-[#176a68] font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40"><Printer size={17} /> Imprimir ou salvar em PDF</button>
         </section>
 
         <section className="report-print-area min-h-[720px] rounded-2xl border border-slate-200 bg-white px-8 py-10 shadow-sm sm:px-14 sm:py-14">
@@ -1241,7 +1248,23 @@ function ReportsPage({ patients, sessions, profileName, profileJobTitle, profile
             <p className="font-bold text-slate-900">Projeto de Anamnese</p>
             <p className="text-xs text-slate-500">Registro de atendimento</p>
           </div>
-          {!patient ? (
+          {reportType === 'sefip' ? (
+            <div className="pt-12 text-slate-800">
+              <h2 className="text-center text-xl font-bold uppercase tracking-wide">Relatório de Acolhidos com SEFIP</h2>
+              <p className="mt-3 text-center text-sm text-slate-500">Acolhidos cujo cadastro possui SEFIP marcado como Sim.</p>
+              <div className="mt-10 overflow-hidden rounded-xl border border-slate-200">
+                {sefipPatients.length ? (
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500"><tr><th className="px-4 py-3">Acolhido</th><th className="px-4 py-3">Documento</th><th className="px-4 py-3">Nascimento</th><th className="px-4 py-3">Município</th><th className="px-4 py-3">Telefone</th></tr></thead>
+                    <tbody className="divide-y divide-slate-100">{sefipPatients.map((item) => <tr key={item.id}><td className="px-4 py-3 font-semibold">{item.name}</td><td className="px-4 py-3">{item.document || 'Não informado'}</td><td className="px-4 py-3">{item.birth ? formatDate(item.birth) : 'Não informado'}</td><td className="px-4 py-3">{item.municipality || 'Não informado'}</td><td className="px-4 py-3">{item.phone || 'Não informado'}</td></tr>)}</tbody>
+                  </table>
+                ) : <p className="p-6 text-center text-sm text-slate-500">Nenhum Acolhido com SEFIP marcado como Sim.</p>}
+              </div>
+              <p className="mt-6 text-right text-sm">Total: <b>{sefipPatients.length}</b> Acolhido(s)</p>
+              <p className="mt-10 text-right">{formatDate(new Date().toISOString().slice(0, 10))}.</p>
+              <div className="mx-auto mt-24 max-w-sm border-t border-slate-500 pt-3 text-center"><p className="font-semibold">{issuingProfessional}</p><p className="text-sm text-slate-600">{profileJobTitle || 'Cargo não informado'}</p>{profileCouncil && <p className="text-sm text-slate-600">{profileCouncil}</p>}<p className="mt-1 text-xs text-slate-500">Usuário responsável pela emissão</p></div>
+            </div>
+          ) : !patient ? (
             <div className="grid min-h-[480px] place-items-center text-center text-sm text-slate-400">Selecione um Acolhido para gerar o documento.</div>
           ) : reportType === 'declaration' ? (
             <div className="pt-12 text-slate-800">
