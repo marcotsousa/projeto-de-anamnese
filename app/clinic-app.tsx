@@ -24,6 +24,7 @@ import {
   Plus,
   Printer,
   Search,
+  ShieldCheck,
   Sparkles,
   Trash2,
   Upload,
