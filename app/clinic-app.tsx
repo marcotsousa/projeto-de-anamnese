@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ChevronRight,
   ClipboardCheck,
+  Contrast,
   FileText,
   Gavel,
   Download,
@@ -221,6 +222,7 @@ export default function ClinicApp() {
   const [profileJobTitle, setProfileJobTitle] = useState('');
   const [profileCouncil, setProfileCouncil] = useState('');
   const [fontScale, setFontScale] = useState(100);
+  const [highContrast, setHighContrast] = useState(false);
   const [professionalCount, setProfessionalCount] = useState(0);
   const [active, setActive] = useState('Visão geral'),
     [selected, setSelected] = useState<Patient | null>(null),
@@ -245,6 +247,7 @@ export default function ClinicApp() {
     const storedScale = Number(window.localStorage.getItem('projeto-anamnese:font-scale'));
     const initialScale = storedScale >= 80 && storedScale <= 130 ? storedScale : 100;
     setFontScale(initialScale);
+    setHighContrast(window.localStorage.getItem('projeto-anamnese:high-contrast') === 'true');
     document.documentElement.style.fontSize = '100%';
   }, []);
   const changeFontScale = (amount: number) => {
@@ -252,6 +255,13 @@ export default function ClinicApp() {
       const nextScale = Math.min(130, Math.max(80, current + amount));
       window.localStorage.setItem('projeto-anamnese:font-scale', String(nextScale));
       return nextScale;
+    });
+  };
+  const toggleHighContrast = () => {
+    setHighContrast((current) => {
+      const next = !current;
+      window.localStorage.setItem('projeto-anamnese:high-contrast', String(next));
+      return next;
     });
   };
   useEffect(() => {
@@ -709,7 +719,7 @@ export default function ClinicApp() {
       </div>
     );
   return (
-    <div className="app-shell min-h-screen text-slate-800">
+    <div className={`app-shell min-h-screen text-slate-800 ${highContrast ? 'high-contrast' : ''}`}>
       <aside
         className={`${mobile ? 'translate-x-0' : '-translate-x-full'} app-sidebar fixed inset-y-0 z-40 flex w-64 flex-col border-r border-slate-200/70 bg-white text-slate-700 transition md:translate-x-0`}
       >
@@ -795,6 +805,7 @@ export default function ClinicApp() {
             <span className="hidden min-w-12 border-x border-slate-200 px-2 text-center text-xs font-semibold text-slate-500 sm:block">{fontScale}%</span>
             <button type="button" onClick={() => changeFontScale(10)} disabled={fontScale >= 130} title="Aumentar fonte" aria-label="Aumentar tamanho da fonte" className="h-10 px-3 text-base font-bold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35">A+</button>
           </div>
+          <button type="button" onClick={toggleHighContrast} aria-pressed={highContrast} title={highContrast ? 'Desativar alto contraste' : 'Ativar alto contraste'} aria-label={highContrast ? 'Desativar alto contraste' : 'Ativar alto contraste'} className={`grid h-10 w-10 place-items-center rounded-xl border bg-white ${highContrast ? 'border-slate-900 text-slate-900' : 'border-slate-200 text-slate-600'} hover:bg-slate-100`}><Contrast size={17} /></button>
           <div className="hidden items-center gap-2 lg:flex">
             <button
               onClick={exportBackup}

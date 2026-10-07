@@ -152,6 +152,57 @@ button[class*="bg-[#176a68]"]:hover {
   border-color: transparent !important;
 }
 
+.high-contrast {
+  background: #fff !important;
+  color: #111 !important;
+}
+
+.high-contrast .app-sidebar {
+  background: #111 !important;
+  border-color: #111 !important;
+  color: #fff !important;
+}
+
+.high-contrast .app-sidebar * {
+  border-color: #444 !important;
+}
+
+.high-contrast .app-sidebar [class*="text-slate"],
+.high-contrast .app-sidebar [class*="text-teal"] {
+  color: #fff !important;
+}
+
+.high-contrast .app-sidebar button[class*="bg-teal-50"] {
+  background: #fff !important;
+  color: #111 !important;
+}
+
+.high-contrast .app-header,
+.high-contrast .panel,
+.high-contrast .report-print-area {
+  background: #fff !important;
+  border-color: #111 !important;
+  color: #111 !important;
+}
+
+.high-contrast .app-content [class*="text-slate"],
+.high-contrast .app-content [class*="text-teal"] {
+  color: #111 !important;
+}
+
+.high-contrast .app-content input:not([type='checkbox']):not([type='radio']),
+.high-contrast .app-content select,
+.high-contrast .app-content textarea {
+  border-color: #111 !important;
+  color: #111 !important;
+}
+
+.high-contrast .app-content button[class*="bg-[#176a68]"],
+.high-contrast .app-content button[class*="bg-teal"] {
+  background: #111 !important;
+  color: #fff !important;
+}
+
 .app-content button,
 .app-header button,
 .app-sidebar button {
