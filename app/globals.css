@@ -283,7 +283,7 @@ button[class*="bg-[#176a68]"]:hover {
 }
 
 .login-screen > section:first-child {
-  background: #f1f1f2 !important;
+  background-color: #f1f1f2 !important;
   border-color: #e5e5e5 !important;
 }
 

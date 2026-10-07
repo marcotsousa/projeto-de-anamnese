@@ -2040,7 +2040,8 @@ function LoginScreen({
   }
   return (
     <main className="login-screen grid min-h-screen bg-[#f8f8f8] lg:grid-cols-[1.05fr_.95fr]">
-      <section className="relative hidden overflow-hidden border-r border-teal-100/70 bg-[#edf7f3] p-14 text-slate-800 lg:flex lg:flex-col lg:justify-between">
+      <section className="relative hidden overflow-hidden border-r border-slate-200 bg-[#f1f1f2] bg-cover bg-center p-14 text-slate-800 lg:flex lg:flex-col lg:justify-between" style={{ backgroundImage: "url('/illustrations/thinkpad-login.png')" }}>
+        <div className="absolute inset-0 bg-white/55" />
         <div className="relative flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded-xl bg-[#d9f0e8] text-[#19595a]">
             <NotebookPen size={25} />
@@ -2053,13 +2054,6 @@ function LoginScreen({
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
             Registro de Entrevista/Anamnese Psicológica Online
           </h1>
-          <img
-            src="/illustrations/thinkpad-login.png"
-            alt="Notebook ThinkPad aberto"
-            className="mt-10 w-full max-w-md object-contain opacity-90 mix-blend-multiply"
-            loading="eager"
-            decoding="async"
-          />
         </div>
         <p className="relative text-sm text-slate-500">
           Acesso protegido · Dados sincronizados com segurança
