@@ -177,6 +177,16 @@ button[class*="bg-[#176a68]"]:hover {
   color: #111 !important;
 }
 
+.high-contrast .app-sidebar > div:last-child > div {
+  background: #fff !important;
+  color: #111 !important;
+}
+
+.high-contrast .app-sidebar > div:last-child > div p,
+.high-contrast .app-sidebar > div:last-child > div button {
+  color: #111 !important;
+}
+
 .high-contrast .app-header,
 .high-contrast .panel,
 .high-contrast .report-print-area {
