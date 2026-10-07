@@ -2331,6 +2331,12 @@ function PsychosocialAnamnesisForm({
   const answers = value?.psychosocialAnswers ?? {};
   const defaults: Record<string, string> = {};
   const answer = (key: string) => answers[key] ?? defaults[key] ?? '';
+  const [selectedSubstance, setSelectedSubstance] = useState(answer('q13'));
+  const [manualSubstanceType, setManualSubstanceType] = useState(answer('q14'));
+  const legalSubstances = new Set(['Álcool']);
+  const automaticSubstanceType = selectedSubstance && selectedSubstance !== 'Outra'
+    ? legalSubstances.has(selectedSubstance) ? 'Lícita' : 'Ilícita'
+    : '';
   function collectAnswers(form: HTMLFormElement) {
     const data = new FormData(form);
     const psychosocialAnswers: Record<string, string> = {};
@@ -2378,6 +2384,8 @@ function PsychosocialAnamnesisForm({
                 return <div key={key} className="grid gap-6">
                   <div className="grid gap-2"><label className="text-sm font-semibold text-slate-700"><span className="mr-2 text-xs font-bold text-teal-700">{question.id}.</span>{question.label}</label>
                   {question.type === 'textarea' ? <textarea name={key} defaultValue={answer(key)} rows={3} className="rounded-xl border bg-white p-3 text-sm outline-none focus:border-teal-500" />
+                  : question.type === 'select' && question.id === 13 ? <select name={key} value={selectedSubstance} onChange={(event) => setSelectedSubstance(event.target.value)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500"><option value="">Selecione</option>{question.options?.map((option) => <option key={option}>{option}</option>)}</select>
+                  : question.type === 'select' && question.id === 14 ? <><select name={key} value={automaticSubstanceType || manualSubstanceType} onChange={(event) => setManualSubstanceType(event.target.value)} disabled={Boolean(automaticSubstanceType)} className="h-11 rounded-xl border bg-slate-50 px-3 text-sm outline-none focus:border-teal-500 disabled:cursor-not-allowed disabled:text-slate-700"><option value="">Selecione</option>{question.options?.map((option) => <option key={option}>{option}</option>)}</select><p className="text-xs font-normal text-slate-500">{automaticSubstanceType ? 'Preenchido automaticamente conforme a substância selecionada.' : 'Selecione a classificação quando for Outra substância.'}</p></>
                   : question.type === 'select' ? <select name={key} defaultValue={answer(key)} className="h-11 rounded-xl border bg-white px-3 text-sm outline-none focus:border-teal-500"><option value="">Selecione</option>{question.options?.map((option) => <option key={option}>{option}</option>)}</select>
                   : question.type === 'multi' ? <div className="grid gap-2 rounded-xl border bg-slate-50 p-4 sm:grid-cols-2 lg:grid-cols-3">{question.options?.map((option) => <label key={option} className="flex items-center gap-2 text-sm font-normal"><input type="checkbox" name={key} value={option} defaultChecked={answer(key).split(', ').includes(option)} className="h-4 w-4 accent-teal-700" />{option}</label>)}</div>
                   : question.type === 'matrix' ? <div className="overflow-x-auto rounded-xl border"><table className="w-full min-w-[540px] text-sm"><thead className="bg-slate-50"><tr><th className="px-3 py-3 text-left">Item</th>{question.columns?.map((column) => <th key={column} className="px-3 py-3 text-center">{column}</th>)}</tr></thead><tbody>{question.rows?.map((row) => <tr key={row} className="border-t"><td className="px-3 py-3 font-medium">{row}</td>{question.columns?.map((column) => <td key={column} className="px-3 py-3 text-center"><input required type="radio" name={`${key}__${row}`} value={column} defaultChecked={answer(`${key}__${row}`) === column} className="h-4 w-4 accent-teal-700" /></td>)}</tr>)}</tbody></table></div>
