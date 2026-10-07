@@ -2235,7 +2235,7 @@ const psychosocialSections: Array<{ title: string; description: string; question
   },
   {
     title: 'Uso de substâncias psicoativas', description: 'Padrão de uso, impactos, gastos e motivação para interrupção.', questions: [
-      { id: 13, label: 'Substância psicoativa mais utilizada', type: 'select', options: ['Álcool', 'Anfetamina', 'Cocaína', 'Êxtase (MDMA)', 'Haxixe', 'Heroína', 'Lança-perfume', 'Crack', 'LSD', 'Cetamina', 'Maconha', 'Outra'] },
+      { id: 13, label: 'Substância psicoativa mais utilizada', type: 'select', options: ['Tabaco', 'Álcool', 'Anfetamina', 'Cocaína', 'Êxtase (MDMA)', 'Haxixe', 'Heroína', 'Lança-perfume', 'Crack', 'LSD', 'Cetamina', 'Maconha', 'Outra'] },
       { id: 14, label: 'Tipo de SPA', type: 'select', options: ['Lícita', 'Ilícita', 'Ambas'] },
       { id: 16, label: 'Valor gasto mensalmente com consumo de SPA', type: 'select', options: ['Menos que R$ 500,00', 'Entre R$ 500,00 e R$ 1.400,00', 'Acima de R$ 1.400,00', 'Não sabe'] },
       { id: 17, label: 'Idade de início do uso de SPA', type: 'select', options: ['7 a 11 anos', '12 a 16 anos', '17 a 21 anos', 'Após 22 anos'] },
@@ -2333,7 +2333,7 @@ function PsychosocialAnamnesisForm({
   const answer = (key: string) => answers[key] ?? defaults[key] ?? '';
   const [selectedSubstance, setSelectedSubstance] = useState(answer('q13'));
   const [manualSubstanceType, setManualSubstanceType] = useState(answer('q14'));
-  const legalSubstances = new Set(['Álcool']);
+  const legalSubstances = new Set(['Tabaco', 'Álcool']);
   const automaticSubstanceType = selectedSubstance && selectedSubstance !== 'Outra'
     ? legalSubstances.has(selectedSubstance) ? 'Lícita' : 'Ilícita'
     : '';
