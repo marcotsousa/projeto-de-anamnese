@@ -252,6 +252,30 @@ button[class*="bg-[#176a68]"]:hover {
   color: #fff !important;
 }
 
+/* Neutral visual accents in the standard theme as well. WhatsApp is restored below. */
+.app-shell:not(.high-contrast) [class*="text-teal"],
+.app-shell:not(.high-contrast) [class*="text-emerald"],
+.app-shell:not(.high-contrast) [class*="bg-teal"],
+.app-shell:not(.high-contrast) [class*="bg-emerald"],
+.app-shell:not(.high-contrast) [class*="border-teal"],
+.app-shell:not(.high-contrast) [class*="border-emerald"],
+.app-shell:not(.high-contrast) [class*="ring-teal"] {
+  color: #374151 !important;
+  background-color: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+  --tw-ring-color: #9ca3af !important;
+}
+
+.app-shell:not(.high-contrast) a[href^="https://wa.me/"] {
+  background-color: #16a34a !important;
+  border-color: #16a34a !important;
+  color: #fff !important;
+}
+
+.app-shell:not(.high-contrast) a[href^="https://wa.me/"] * {
+  color: #fff !important;
+}
+
 .app-content button,
 .app-header button,
 .app-sidebar button {
