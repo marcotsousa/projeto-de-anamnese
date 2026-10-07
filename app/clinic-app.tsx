@@ -2039,7 +2039,7 @@ function LoginScreen({
     setLoading(false);
   }
   return (
-    <main className="grid min-h-screen bg-[#f8fbfa] lg:grid-cols-[1.05fr_.95fr]">
+    <main className="login-screen grid min-h-screen bg-[#f8f8f8] lg:grid-cols-[1.05fr_.95fr]">
       <section className="relative hidden overflow-hidden border-r border-teal-100/70 bg-[#edf7f3] p-14 text-slate-800 lg:flex lg:flex-col lg:justify-between">
         <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full border-[60px] border-teal-600/5" />
         <div className="absolute -bottom-32 left-20 h-96 w-96 rounded-full bg-teal-300/10" />
