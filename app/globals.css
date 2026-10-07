@@ -226,6 +226,32 @@ button[class*="bg-[#176a68]"]:hover {
   color: #fff !important;
 }
 
+/* Remove accents verdes restantes while high contrast is active. */
+.high-contrast [class*="text-teal"],
+.high-contrast [class*="text-emerald"],
+.high-contrast [class*="bg-teal"],
+.high-contrast [class*="bg-emerald"],
+.high-contrast [class*="border-teal"],
+.high-contrast [class*="border-emerald"],
+.high-contrast [class*="ring-teal"] {
+  color: #111 !important;
+  background-color: #fff !important;
+  border-color: #111 !important;
+  --tw-ring-color: #111 !important;
+}
+
+.high-contrast .app-content button[class*="bg-teal"],
+.high-contrast .app-content button[class*="bg-[#176a68]"] {
+  background-color: #111 !important;
+  color: #fff !important;
+  border-color: #111 !important;
+}
+
+.high-contrast .app-content button[class*="bg-teal"] *,
+.high-contrast .app-content button[class*="bg-[#176a68]"] * {
+  color: #fff !important;
+}
+
 .app-content button,
 .app-header button,
 .app-sidebar button {
