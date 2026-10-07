@@ -217,6 +217,15 @@ button[class*="bg-[#176a68]"]:hover {
   color: #fff !important;
 }
 
+.high-contrast .app-content button[class*="bg-teal-50"] {
+  background: #111 !important;
+  color: #fff !important;
+}
+
+.high-contrast .app-content button[class*="bg-teal-50"] * {
+  color: #fff !important;
+}
+
 .app-content button,
 .app-header button,
 .app-sidebar button {
