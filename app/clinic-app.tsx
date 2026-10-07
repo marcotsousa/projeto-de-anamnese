@@ -757,7 +757,7 @@ export default function ClinicApp() {
               <Icon size={18} />
               {label}
               {label === 'Acolhidos' && (
-                <span className="ml-auto rounded-full bg-white px-2.5 py-0.5 text-xs text-teal-700 shadow-sm">
+                <span className="acolhidos-count ml-auto rounded-full bg-white px-2.5 py-0.5 text-xs text-teal-700 shadow-sm">
                   {patients.length}
                 </span>
               )}

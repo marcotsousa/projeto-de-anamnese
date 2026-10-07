@@ -176,6 +176,11 @@ button[class*="bg-[#176a68]"]:hover {
   color: #fff !important;
 }
 
+.high-contrast .app-sidebar .acolhidos-count {
+  background-color: #fff !important;
+  color: #111 !important;
+}
+
 .high-contrast .app-sidebar button[class*="bg-teal-50"] {
   background: #fff !important;
   color: #111 !important;
