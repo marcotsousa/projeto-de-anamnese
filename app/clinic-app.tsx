@@ -1047,43 +1047,21 @@ function Dashboard({
       <section className="panel mt-6">
         <div className="panel-head">
           <div>
-            <h2>Acolhidos recentes</h2>
-            <p>Acesso rápido aos últimos prontuários</p>
+            <h2>Sobre</h2>
+            <p>Resumo do ambiente de atendimento</p>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500">
-              <tr>
-                <th className="px-6 py-3">Acolhido</th>
-                <th className="px-6 py-3">Último atendimento</th>
-                <th className="px-6 py-3">Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {patients.map((p) => (
-                <tr
-                  key={p.id}
-                  onClick={() => select(p)}
-                  className="cursor-pointer border-t border-slate-100 hover:bg-slate-50"
-                >
-                  <td className="px-6 py-4">
-                    <PatientName p={p} />
-                  </td>
-                  <td className="px-6 py-4 text-slate-500">{p.last}</td>
-                  <td className="px-6 py-4">
-                    <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                      {p.status}
-                    </span>
-                  </td>
-                  <td>
-                    <ChevronRight size={18} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid gap-5 p-6 md:grid-cols-[1fr_auto] md:items-center">
+          <div>
+            <h3 className="text-lg font-semibold text-slate-900">Gestão clínica em um só lugar</h3>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
+              Consulte os acolhidos, registre anamneses, acompanhe evoluções e organize os atendimentos com segurança.
+            </p>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-center">
+            <p className="text-2xl font-bold text-slate-900">{patients.length}</p>
+            <p className="mt-1 text-xs font-medium text-slate-500">acolhido(s) cadastrado(s)</p>
+          </div>
         </div>
       </section>
     </div>
