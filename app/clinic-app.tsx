@@ -2058,6 +2058,13 @@ function LoginScreen({
           <h1 className="text-4xl font-bold leading-tight tracking-tight">
             Registro de Entrevista/Anamnese Psicológica Online
           </h1>
+          <img
+            src="/illustrations/thinkpad-login.png"
+            alt="Notebook ThinkPad aberto"
+            className="mt-10 w-full max-w-md object-contain opacity-90 mix-blend-multiply"
+            loading="eager"
+            decoding="async"
+          />
         </div>
         <p className="relative text-sm text-slate-500">
           Acesso protegido · Dados sincronizados com segurança
