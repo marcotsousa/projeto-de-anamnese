@@ -152,6 +152,10 @@ button[class*="bg-[#176a68]"]:hover {
   border-color: transparent !important;
 }
 
+.app-shell:not(.high-contrast) .app-sidebar > div:last-child > div {
+  border: 1px solid #e5e5e5;
+}
+
 .high-contrast {
   background: #fff !important;
   color: #111 !important;
