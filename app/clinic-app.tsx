@@ -2324,20 +2324,23 @@ function PsychosocialAnamnesisForm({
   const answers = value?.psychosocialAnswers ?? {};
   const defaults: Record<string, string> = {};
   const answer = (key: string) => answers[key] ?? defaults[key] ?? '';
-  function submit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const data = new FormData(event.currentTarget);
+  function collectAnswers(form: HTMLFormElement) {
+    const data = new FormData(form);
     const psychosocialAnswers: Record<string, string> = {};
     for (const [key, raw] of data.entries()) {
       const text = String(raw);
       psychosocialAnswers[key] = psychosocialAnswers[key] ? `${psychosocialAnswers[key]}, ${text}` : text;
     }
-    onSave({ ...(value ?? {}), patientId: patient.id, psychosocialAnswers, updatedAt: new Date().toISOString() });
+    return psychosocialAnswers;
+  }
+  function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    onSave({ ...(value ?? {}), patientId: patient.id, psychosocialAnswers: collectAnswers(event.currentTarget), updatedAt: new Date().toISOString() });
     setSaved(true);
     window.setTimeout(() => setSaved(false), 2500);
   }
   return (
-    <form onSubmit={submit} className="panel mt-6 overflow-hidden">
+    <form onSubmit={submit} onChange={(event) => onSave({ ...(value ?? {}), patientId: patient.id, psychosocialAnswers: collectAnswers(event.currentTarget), updatedAt: new Date().toISOString() })} className="panel mt-6 overflow-hidden">
       <div className="sticky top-20 z-10 border-b bg-white/95 px-6 py-5 backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div><h2 className="text-lg font-bold">Anamnese Psicossocial Individual</h2><p className="text-sm text-slate-500">64 questões e instrumento ASSIST organizados em 6 blocos clínicos</p></div>
