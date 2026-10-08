@@ -741,8 +741,8 @@ export default function ClinicApp() {
           </button>
         </div>
         <nav className="flex-1 space-y-2 p-5">
-          <p className="mb-4 px-3 text-[11px] font-bold uppercase tracking-[.16em] text-teal-700/55">
-            Consultório
+          <p className="sidebar-menu-title mb-4 px-3 text-[11px] font-bold uppercase tracking-[.16em] text-slate-600">
+            Menu
           </p>
           {visibleNav.map(([label, Icon]) => (
             <button
