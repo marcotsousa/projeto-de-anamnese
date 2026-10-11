@@ -3022,14 +3022,23 @@ function PatientForm({
   useEffect(() => {
     if (!selectedProfessionalId || !appointmentDate) {
       setBusyTimes([]);
+      setSlotsLoading(false);
       return;
     }
     let active = true;
     setSlotsLoading(true);
-    supabase?.auth.getSession().then(async ({ data }) => {
+    if (!supabase) {
+      setSlotsLoading(false);
+      return () => { active = false; };
+    }
+    supabase.auth.getSession().then(async ({ data }) => {
       try {
+        if (!data.session?.access_token) return;
         const params = new URLSearchParams({ professionalId: selectedProfessionalId, date: appointmentDate });
-        const response = await fetch(`/api/appointments?${params}`, { headers: { Authorization: `Bearer ${data.session?.access_token}` } });
+        const response = await fetch(`/api/appointments?${params}`, {
+          headers: { Authorization: `Bearer ${data.session.access_token}` },
+          signal: AbortSignal.timeout(8000),
+        });
         if (response.ok && active) {
           const appointments: AppointmentRecord[] = await response.json();
           setBusyTimes(appointments.flatMap((appointment) => {
