@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'A data do atendimento não pode estar no passado.' }, { status: 400 });
   const { data: professional } = await authorization.admin
     .from('profiles')
-    .select('availability_start, availability_end')
+    .select('full_name, role, availability_start, availability_end')
     .eq('user_id', professionalId)
     .in('role', ['psicologo', 'assistente_social'])
     .single();
@@ -61,20 +61,52 @@ export async function POST(request: NextRequest) {
   if (!professional || startTime < availabilityStart || endTime > availabilityEnd)
     return NextResponse.json({ error: 'Horário fora da disponibilidade do profissional.' }, { status: 400 });
 
-  const { data: appointmentId, error } = await authorization.admin.rpc('create_client_with_appointment', {
-    p_client_id: String(client.id),
-    p_client_data: client,
-    p_client_phone: client.spaPhone.trim(),
-    p_professional_id: professionalId,
-    p_appointment_date: date,
-    p_start_time: startTime,
-    p_end_time: endTime,
-    p_created_by: authorization.userId,
-  });
-  if (error?.message.includes('Horário ocupado'))
+  const { data: overlap } = await authorization.admin
+    .from('appointments')
+    .select('id')
+    .eq('professional_user_id', professionalId)
+    .eq('appointment_date', date)
+    .neq('status', 'cancelado')
+    .lt('start_time', endTime)
+    .gt('end_time', startTime)
+    .limit(1);
+  if (overlap?.length)
     return NextResponse.json({ error: 'Este horário acabou de ser ocupado. Escolha outro.' }, { status: 409 });
-  if (error) return NextResponse.json({ error: 'Não foi possível salvar o Acolhido e o agendamento.' }, { status: 400 });
-  return NextResponse.json({ appointmentId, endTime });
+
+  const { error: clientError } = await authorization.admin.from('clients').insert({
+    id: String(client.id),
+    data: client,
+    created_by: authorization.userId,
+    assigned_professional_id: professionalId,
+  });
+  if (clientError?.code === '23505')
+    return NextResponse.json({ error: 'Este Acolhido já está cadastrado.' }, { status: 409 });
+  if (clientError)
+    return NextResponse.json({ error: 'Não foi possível salvar o Acolhido.' }, { status: 400 });
+
+  const { data: appointment, error: appointmentError } = await authorization.admin
+    .from('appointments')
+    .insert({
+      client_reference: String(client.id),
+      client_name: client.name.trim(),
+      client_phone: client.spaPhone.trim(),
+      professional_user_id: professionalId,
+      professional_name: professional.full_name,
+      professional_role: professional.role,
+      appointment_date: date,
+      start_time: startTime,
+      end_time: endTime,
+      created_by: authorization.userId,
+    })
+    .select('id')
+    .single();
+  if (appointmentError) {
+    await authorization.admin.from('clients').delete().eq('id', String(client.id)).eq('created_by', authorization.userId);
+    if (appointmentError.code === '23505')
+      return NextResponse.json({ error: 'Este horário acabou de ser ocupado. Escolha outro.' }, { status: 409 });
+    return NextResponse.json({ error: 'Não foi possível salvar o agendamento.' }, { status: 400 });
+  }
+  return NextResponse.json({ appointmentId: appointment.id, endTime });
 }
 
 export async function PATCH(request: NextRequest) {
