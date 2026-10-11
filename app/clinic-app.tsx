@@ -3160,7 +3160,7 @@ function PatientForm({
           <label className="grid gap-1.5 text-sm font-semibold">Data do atendimento<input required name="appointmentDate" type="date" lang="pt-BR" min={todayValue} value={appointmentDate} onChange={(event) => setAppointmentDate(event.target.value)} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500" /></label>
           <label className="grid gap-1.5 text-sm font-semibold">
             Horário disponível
-            <select required name="appointmentTime" defaultValue="" key={`${selectedProfessionalId}-${appointmentDate}-${busyTimes.join(',')}`} disabled={!selectedProfessionalId || !appointmentDate || slotsLoading} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
+            <select required name="appointmentTime" defaultValue="" key={`${selectedProfessionalId}-${appointmentDate}-${busyTimes.join(',')}`} disabled={!selectedProfessionalId || !appointmentDate} className="h-11 rounded-xl border bg-white px-3 font-normal outline-none focus:border-teal-500 disabled:text-slate-400">
               <option value="">{slotsLoading ? 'Verificando horários…' : 'Selecione o horário'}</option>
               {availableTimes.map((time) => <option key={time} value={time}>{time}–{(() => { const [h, m] = time.split(':').map(Number); const total = h * 60 + m + 60; return `${String(Math.floor(total / 60)).padStart(2, '0')}:${String(total % 60).padStart(2, '0')}`; })()}</option>)}
             </select>
